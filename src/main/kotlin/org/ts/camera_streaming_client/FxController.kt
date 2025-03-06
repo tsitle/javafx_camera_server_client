@@ -4,6 +4,7 @@ import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.control.Button
 import javafx.scene.control.Label
+import javafx.scene.control.TextField
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.AnchorPane
@@ -31,6 +32,8 @@ open class FxController {
 	private lateinit var currentFrame: ImageView
 	@FXML
 	private lateinit var statusLbl: Label
+	@FXML
+	private lateinit var streamUrlTxtfld: TextField
 
 	// a timer for acquiring the video stream
 	private var timer: ScheduledExecutorService? = null
@@ -44,26 +47,18 @@ open class FxController {
 	// width to height ratio of the camera image
 	private var cameraRatio = -1.0
 
-	// the ID of the locally connected Webcam to be used
-	private val cameraId = 0
-
-	// collection of MJPEG stream URLs
+	/*
 	private val cameraUrls = arrayOf(
 			"http://61.211.241.239/nphMotionJpeg?Resolution=320x240&Quality=Standard",
 			"http://195.196.36.242/mjpg/video.mjpg",  // cannot set resolution
-			"http://webcam.mchcares.com/mjpg/video.mjpg",  // cannot set resolution
-			"http://takemotopiano.aa1.netvolante.jp:8190/nphMotionJpeg?Resolution=640x480&Quality=Standard&Framerate=30",
+			"http://webcam.mchcares.com/mjpg/video.mjpg",  // cannot set resolution, very boring stream
+			"http://takemotopiano.aa1.netvolante.jp:8190/nphMotionJpeg?Resolution=640x480&Quality=Standard&Framerate=30",  // very boring stream
 			"http://pendelcam.kip.uni-heidelberg.de/mjpg/video.mjpg" // cannot set resolution
 		)
-
-	// the index of the stream URL to be used
-	private val cameraIxUrl = 1
-
-	// use locally connected Webcam or stream?
-	private val cameraUseLocal = false
+	*/
 
 	// output width of the camera image
-	private val cameraOutputWidth: Int = 320
+	private val cameraOutputWidth: Int = 600
 
 	// output FPS (frames per second) of camera stream
 	private val cameraOutputFps: Int = 24
@@ -82,7 +77,9 @@ open class FxController {
 		this.timer = Executors.newSingleThreadScheduledExecutor()
 
 		// load camera stream
-		connectBtn.fire()
+		if (streamUrlTxtfld.text.isNotEmpty()) {
+			connectBtn.fire()
+		}
 	}
 
 	/**
@@ -92,15 +89,13 @@ open class FxController {
 	 */
 	@FXML
 	protected fun evtConnect(event: ActionEvent?) {
+		// update UI
+		streamUrlTxtfld.isDisable = true
+		//
 		if (! this.cameraActive) {
 			// start the video capture
-			if (cameraUseLocal) {
-				capture?.open(cameraId)
-			} else {
-				if (cameraIxUrl >= cameraUrls.size) {
-					throw RuntimeException("cameraIxUrl out of bounds")
-				}
-				capture?.open(cameraUrls[cameraIxUrl])
+			if (streamUrlTxtfld.text.isNotEmpty()) {
+				capture?.open(streamUrlTxtfld.text)
 			}
 
 			// is the video stream available?
@@ -130,6 +125,7 @@ open class FxController {
 				statusLbl.text = "Connected"
 			} else {
 				System.err.println("Could not open camera connection...")
+				streamUrlTxtfld.isDisable = false
 			}
 		} else {
 			// the camera is not active at this point
@@ -137,6 +133,7 @@ open class FxController {
 			// update UI
 			connectBtn.text = "Connect"
 			statusLbl.text = "Disconnected"
+			streamUrlTxtfld.isDisable = false
 
 			// stop the timer
 			this.stopAcquisition()
