@@ -10,6 +10,10 @@ plugins {
 group 'org.ts'
 version '1.0-SNAPSHOT'
 
+def openCvJar = 'build_opencv/4.11.0/build/bin/opencv-4110.jar'
+def openCvLibFolder = 'build_opencv/4.11.0/build/lib/'
+
+
 repositories {
   mavenCentral()
 }
@@ -31,21 +35,33 @@ kotlin {
   jvmToolchain( 17 )
 }
 
+java {
+  toolchain {
+    // Kotlin does not yet support 23 JDK target
+    //languageVersion.set(JavaLanguageVersion.of(23))  // JDK 23 is only required here because my OpenCV build was compiled with JDK 23
+    //
+    languageVersion.set(JavaLanguageVersion.of(17))
+  }
+}
+
 javafx {
   version = '22.0.1'
-  modules = ['javafx.controls', 'javafx.fxml']
+  modules = ['javafx.controls', 'javafx.fxml', 'javafx.swing']
 }
 
 dependencies {
   implementation('org.controlsfx:controlsfx:11.2.1')
   implementation('org.kordamp.bootstrapfx:bootstrapfx-core:0.4.0')
 
+  implementation files(openCvJar)
+
   testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
 }
 
 test {
-useJUnitPlatform()}
+  useJUnitPlatform()
+}
 
 jlink {
   imageZip = project.file("${buildDir}/distributions/app-${javafx.platform.classifier}.zip")
@@ -58,3 +74,5 @@ jlink {
 jlinkZip {
   group = 'distribution'
 }
+
+applicationDefaultJvmArgs = ["-Djava.library.path=" + openCvLibFolder]
