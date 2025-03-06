@@ -3,6 +3,7 @@ package org.ts.camera_streaming_client
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.control.Button
+import javafx.scene.control.Label
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.AnchorPane
@@ -21,13 +22,15 @@ fun Double.format(digits: Int) = "%.${digits}f".format(this)
 
 open class FxController {
 	@FXML
-	private lateinit var btnStartCam: Button
+	private lateinit var connectBtn: Button
 	@FXML
 	private lateinit var imageAnchorPane: AnchorPane
 	@FXML
 	private lateinit var bottomAnchorPane: AnchorPane
 	@FXML
 	private lateinit var currentFrame: ImageView
+	@FXML
+	private lateinit var statusLbl: Label
 
 	// a timer for acquiring the video stream
 	private var timer: ScheduledExecutorService? = null
@@ -79,16 +82,16 @@ open class FxController {
 		this.timer = Executors.newSingleThreadScheduledExecutor()
 
 		// load camera stream
-		btnStartCam.fire()
+		connectBtn.fire()
 	}
 
 	/**
-	 * The action triggered by pushing the button on the GUI
+	 * Event: Button "Connect" pressed
 	 *
-	 * @param event the push button event
+	 * @param event
 	 */
 	@FXML
-	protected fun startCamera(event: ActionEvent?) {
+	protected fun evtConnect(event: ActionEvent?) {
 		if (! this.cameraActive) {
 			// start the video capture
 			if (cameraUseLocal) {
@@ -122,16 +125,18 @@ open class FxController {
 						TimeUnit.MILLISECONDS
 					)
 
-				// update the button content
-				btnStartCam.text = "Stop Camera"
+				// update UI
+				connectBtn.text = "Disconnect"
+				statusLbl.text = "Connected"
 			} else {
 				System.err.println("Could not open camera connection...")
 			}
 		} else {
 			// the camera is not active at this point
 			this.cameraActive = false
-			// update again the button content
-			btnStartCam.text = "Start Camera"
+			// update UI
+			connectBtn.text = "Connect"
+			statusLbl.text = "Disconnected"
 
 			// stop the timer
 			this.stopAcquisition()
@@ -158,7 +163,7 @@ open class FxController {
 						Imgproc.cvtColor(frame, frame, Imgproc.COLOR_BGR2GRAY)
 					}
 
-					val lastCameraRation = cameraRatio
+					val lastCameraRatio = cameraRatio
 
 					// scale the image
 					val orgWidth = frame.width()
@@ -170,7 +175,7 @@ open class FxController {
 					frame = resizedFrame
 
 					// update
-					if (cameraRatio > 0.0 && lastCameraRation != cameraRatio && imageAnchorPane.width > 0.0) {
+					if (cameraRatio > 0.0 && lastCameraRatio != cameraRatio && imageAnchorPane.width > 0.0) {
 						updateWindowSize(imageAnchorPane.width.toInt(), imageAnchorPane.height.toInt() + bottomAnchorPane.height.toInt())
 					}
 				}
