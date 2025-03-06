@@ -1,6 +1,7 @@
 package org.ts.camera_streaming_client
 
 import javafx.application.Application
+import javafx.application.Platform
 import javafx.event.EventHandler
 import javafx.fxml.FXMLLoader
 import javafx.scene.Scene
@@ -31,6 +32,17 @@ class ClientApplication : Application() {
 			// set the proper behavior on closing the application
 			val controller: FxController = loader.getController<FxController>()
 			primaryStage.onCloseRequest = (EventHandler<WindowEvent?> { controller.setClosed() })
+
+			// add event handler for window width changes
+			scene.widthProperty().addListener { _, oldSceneWidth, newSceneWidth ->
+					//println("window width changed: $oldSceneWidth -> $newSceneWidth")
+					controller.updateWindowSize(newSceneWidth.toInt(), scene.height.toInt())
+				}
+
+			Platform.runLater {
+				//println("runLater: Main window has been opened")
+				controller.externalInitWindowSize()
+			}
 		} catch (e: Exception) {
 			e.printStackTrace()
 		}
