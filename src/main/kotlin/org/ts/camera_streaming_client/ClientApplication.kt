@@ -33,10 +33,14 @@ class ClientApplication : Application() {
 			val controller: FxController = loader.getController<FxController>()
 			primaryStage.onCloseRequest = (EventHandler<WindowEvent?> { controller.setClosed() })
 
-			// add event handler for window width changes
+			// add event handler for window size changes
 			scene.widthProperty().addListener { _, oldSceneWidth, newSceneWidth ->
 					//println("window width changed: $oldSceneWidth -> $newSceneWidth")
 					controller.updateWindowSize(newSceneWidth.toInt(), scene.height.toInt())
+				}
+			scene.heightProperty().addListener { _, oldSceneHeight, newSceneHeight ->
+					//println("window height changed: $oldSceneHeight -> $newSceneHeight")
+					controller.updateWindowSize(scene.width.toInt(), newSceneHeight.toInt())
 				}
 
 			Platform.runLater {
