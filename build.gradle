@@ -29,8 +29,10 @@ tasks.withType(JavaCompile) {
 
 application {
   mainModule = 'org.ts.camera_streaming_client'
-  mainClass = 'org.ts.camera_streaming_client.HelloApplication'
+  mainClass = 'org.ts.camera_streaming_client.ClientApplication'
+  applicationDefaultJvmArgs += "-Djava.library.path=${projectDir}/" + openCvLibFolder
 }
+
 kotlin {
   jvmToolchain( 17 )
 }
@@ -74,5 +76,3 @@ jlink {
 jlinkZip {
   group = 'distribution'
 }
-
-applicationDefaultJvmArgs = ["-Djava.library.path=" + openCvLibFolder]
