@@ -240,6 +240,12 @@ open class FxController {
 			//println("updateWindowSize: case 1 - window wider than image")
 			currentFrame.fitHeight = imageAnchorPane.height
 			currentFrame.fitWidth = imageAnchorPane.height * cameraRatio
+
+			if (imageAnchorPane.height + bottomAnchorPane.height > newHeight) {
+				// if the image is now too high we need to make it narrower again
+				currentFrame.fitHeight = newHeight.toDouble() - bottomAnchorPane.height
+				currentFrame.fitWidth = currentFrame.fitHeight * cameraRatio
+			}
 			//
 			currentFrame.x = (imageAnchorPane.width - currentFrame.fitWidth) / 2.0
 			currentFrame.y = 0.0
