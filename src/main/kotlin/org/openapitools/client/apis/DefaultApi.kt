@@ -50,7 +50,7 @@ class DefaultApi(basePath: kotlin.String = defaultBasePath, client: Call.Factory
      * Get status of server
      * Get status of all properties
      * @param cid Optional client ID (optional)
-     * @return kotlin.collections.List<Status>
+     * @return Status
      * @throws IllegalStateException If the request is not correctly configured
      * @throws IOException Rethrows the OkHttp execute method exception
      * @throws UnsupportedOperationException If the API returns an informational or redirection response
@@ -59,11 +59,11 @@ class DefaultApi(basePath: kotlin.String = defaultBasePath, client: Call.Factory
      */
     @Suppress("UNCHECKED_CAST")
     @Throws(IllegalStateException::class, IOException::class, UnsupportedOperationException::class, ClientException::class, ServerException::class)
-    fun getStatus(cid: kotlin.Int? = null) : kotlin.collections.List<Status> {
+    fun getStatus(cid: kotlin.Int? = null) : Status {
         val localVarResponse = getStatusWithHttpInfo(cid = cid)
 
         return when (localVarResponse.responseType) {
-            ResponseType.Success -> (localVarResponse as Success<*>).data as kotlin.collections.List<Status>
+            ResponseType.Success -> (localVarResponse as Success<*>).data as Status
             ResponseType.Informational -> throw UnsupportedOperationException("Client does not support Informational responses.")
             ResponseType.Redirection -> throw UnsupportedOperationException("Client does not support Redirection responses.")
             ResponseType.ClientError -> {
@@ -82,16 +82,16 @@ class DefaultApi(basePath: kotlin.String = defaultBasePath, client: Call.Factory
      * Get status of server
      * Get status of all properties
      * @param cid Optional client ID (optional)
-     * @return ApiResponse<kotlin.collections.List<Status>?>
+     * @return ApiResponse<Status?>
      * @throws IllegalStateException If the request is not correctly configured
      * @throws IOException Rethrows the OkHttp execute method exception
      */
     @Suppress("UNCHECKED_CAST")
     @Throws(IllegalStateException::class, IOException::class)
-    fun getStatusWithHttpInfo(cid: kotlin.Int?) : ApiResponse<kotlin.collections.List<Status>?> {
+    fun getStatusWithHttpInfo(cid: kotlin.Int?) : ApiResponse<Status?> {
         val localVariableConfig = getStatusRequestConfig(cid = cid)
 
-        return request<Unit, kotlin.collections.List<Status>>(
+        return request<Unit, Status>(
             localVariableConfig
         )
     }
