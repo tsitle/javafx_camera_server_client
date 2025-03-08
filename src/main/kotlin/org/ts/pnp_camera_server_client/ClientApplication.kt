@@ -26,6 +26,8 @@ class ClientApplication : Application() {
 			primaryStage.title = "Camera Streaming Client"
 			primaryStage.scene = scene
 
+			scene.stylesheets.add(ClientApplication::class.java.getResource("styles.css")?.toExternalForm())
+
 			// show the GUI
 			primaryStage.show()
 

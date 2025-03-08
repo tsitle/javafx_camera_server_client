@@ -1,0 +1,29 @@
+#imageAnchorPane {
+	-fx-background-color: #1e1e1e !important;
+}
+
+#statusLbl {
+	-fx-background-color: #cecece !important;
+}
+
+#mainTabPane {
+	-fx-background-color: #3e3e3e !important;
+}
+
+/* https://docs.oracle.com/javafx/2/api/javafx/scene/doc-files/cssref.html#tabpane */
+/*.tab-pane .tab-header-area .tab-header-background {
+	-fx-background-color: #3e3e3e;
+}*/
+.tab-pane *.tab-header-background {
+	-fx-background-color: -fx-outer-border, -fx-inner-border, derive(-fx-color, -20%);
+	-fx-effect: innershadow(two-pass-box , rgba(0,0,0,0.6) , 4, 0.0 , 0 , 0);
+}
+.tab-pane .tab-header-area .tab {
+	-fx-background-color: #3e3e3e !important;
+}
+.tab-pane .tab-header-area .tab .tab-label {
+	-fx-text-fill: #b6b6b6 !important;
+}
+.tab-pane .tab-header-area .tab:selected .tab-label {
+	-fx-text-fill: white !important;
+}
