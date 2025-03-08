@@ -20,13 +20,13 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 /**
- * Status of frame processors Grid and Perspective-Transformation
+ * Status of frame processor Grid
  *
  * @param show 
  */
 
 
-data class StatusProcGridPt (
+data class StatusProcGrid (
 
     @Json(name = "show")
     val show: kotlin.Boolean? = null

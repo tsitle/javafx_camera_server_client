@@ -20,7 +20,8 @@ import org.openapitools.client.models.StatusCams
 import org.openapitools.client.models.StatusEnabledProc
 import org.openapitools.client.models.StatusProcBnc
 import org.openapitools.client.models.StatusProcCal
-import org.openapitools.client.models.StatusProcGridPt
+import org.openapitools.client.models.StatusProcGrid
+import org.openapitools.client.models.StatusProcPt
 import org.openapitools.client.models.StatusProcRoi
 import org.openapitools.client.models.StatusProcTr
 import org.openapitools.client.models.StatusResolution
@@ -83,10 +84,10 @@ data class Status (
     val procCal: StatusProcCal? = null,
 
     @Json(name = "procGrid")
-    val procGrid: StatusProcGridPt? = null,
+    val procGrid: StatusProcGrid? = null,
 
     @Json(name = "procPt")
-    val procPt: StatusProcGridPt? = null,
+    val procPt: StatusProcPt? = null,
 
     @Json(name = "procRoi")
     val procRoi: StatusProcRoi? = null,
