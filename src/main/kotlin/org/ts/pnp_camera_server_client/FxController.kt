@@ -4,6 +4,7 @@ import javafx.application.Platform
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.control.Button
+import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
 import javafx.scene.control.TextField
 import javafx.scene.image.Image
@@ -52,6 +53,8 @@ open class FxController {
 	private lateinit var ctrlCamBothBtn: Button
 	@FXML
 	private lateinit var ctrlCamRightBtn: Button
+	@FXML
+	private lateinit var ctrlShowGridCbx: CheckBox
 
 	// a timer for acquiring the video stream
 	private var timerFrames: ScheduledExecutorService? = null
@@ -105,7 +108,7 @@ open class FxController {
 				}
 				if (++readStatusTo == 10) {
 					Platform.runLater {
-						getServerStatus(true)
+						clientGetServerStatus(true)
 					}
 					readStatusTo = 0
 				}
@@ -319,6 +322,13 @@ open class FxController {
 		ctrlCamLeftBtn.isDisable = ! this.cameraActive
 		ctrlCamBothBtn.isDisable = ! this.cameraActive
 		ctrlCamRightBtn.isDisable = ! this.cameraActive
+
+		ctrlShowGridCbx.isDisable = ! this.cameraActive
+	}
+
+	private fun outputErrorMessage(errMsg: String) {
+		println(errMsg)
+		statusLbl.text = errMsg
 	}
 
 	/**
@@ -328,7 +338,7 @@ open class FxController {
 	 */
 	@FXML
 	protected fun evtCtrlCamLeft(event: ActionEvent?) {
-		ctrlSetActiveCam(DefaultApi.CamOutputCamEnable.L)
+		clientSetActiveCam(DefaultApi.CamOutputCamEnable.L)
 	}
 
 	/**
@@ -338,7 +348,7 @@ open class FxController {
 	 */
 	@FXML
 	protected fun evtCtrlCamBoth(event: ActionEvent?) {
-		ctrlSetActiveCam(DefaultApi.CamOutputCamEnable.BOTH)
+		clientSetActiveCam(DefaultApi.CamOutputCamEnable.BOTH)
 	}
 
 	/**
@@ -348,10 +358,20 @@ open class FxController {
 	 */
 	@FXML
 	protected fun evtCtrlCamRight(event: ActionEvent?) {
-		ctrlSetActiveCam(DefaultApi.CamOutputCamEnable.R)
+		clientSetActiveCam(DefaultApi.CamOutputCamEnable.R)
 	}
 
-	private fun getServerStatus(isForTimer: Boolean): Status? {
+	/**
+	 * Event: Checkbox "Controls: Show Grid" changed
+	 *
+	 * @param event
+	 */
+	@FXML
+	protected fun evtCtrlShowGrid(event: ActionEvent?) {
+		clientSetShowGrid(ctrlShowGridCbx.isSelected)
+	}
+
+	private fun clientGetServerStatus(isForTimer: Boolean): Status? {
 		if (! cameraActive) {
 			return null
 		}
@@ -360,14 +380,13 @@ open class FxController {
 		try {
 			val resultStat : Status = apiInstance.getStatus(clientId)
 			if (resultStat.result != Status.Result.success) {
-				val errMsg = "Error reading status from server"
-				println(errMsg)
-				statusLbl.text = errMsg
+				outputErrorMessage("Error reading status from server")
 			} else {
 				if (isForTimer) {
 					statusLbl.text = "Connected [${
 							resultStat.cpuTemperature?.toDouble()?.format(2)
 						} °C, FPS ${resultStat.framerate}]"
+					ctrlShowGridCbx.isSelected = resultStat.procGrid?.show ?: false
 				}
 				return resultStat
 			}
@@ -393,15 +412,13 @@ open class FxController {
 		return null
 	}
 
-	private fun ctrlSetActiveCam(cam: DefaultApi.CamOutputCamEnable) {
-		val resultStat : Status = getServerStatus(false) ?: return
+	private fun clientSetActiveCam(cam: DefaultApi.CamOutputCamEnable) {
+		val resultStat : Status = clientGetServerStatus(false) ?: return
 
 		val apiInstance = DefaultApi(serverUrlTxtfld.text)
 		try {
 			if (resultStat.result != Status.Result.success) {
-				val errMsg = "Error reading status from server"
-				println(errMsg)
-				statusLbl.text = errMsg
+				outputErrorMessage("Error reading status from server")
 			} else {
 				var doNothing = false
 				var doSwap = false
@@ -426,27 +443,21 @@ open class FxController {
 				if (! doNothing && doCamEnable != null) {
 					val resultPost : Status = apiInstance.outputCamEnable(doCamEnable)
 					if (resultPost.result != Status.Result.success) {
-						val errMsg = "Could not enable camera $doCamEnable"
-						println(errMsg)
-						statusLbl.text = errMsg
+						outputErrorMessage("Could not enable camera $doCamEnable")
 					} else {
 						println(resultPost)
 					}
 				} else if (! doNothing && doCamDisable != null) {
 					val resultPost : Status = apiInstance.outputCamDisable(doCamDisable)
 					if (resultPost.result != Status.Result.success) {
-						val errMsg = "Could not deactivate camera $doCamDisable"
-						println(errMsg)
-						statusLbl.text = errMsg
+						outputErrorMessage("Could not deactivate camera $doCamDisable")
 					} else {
 						println(resultPost)
 					}
 				} else if (! doNothing && doSwap) {
 					val resultPost : Status = apiInstance.outputCamSwap()
 					if (resultPost.result != Status.Result.success) {
-						val errMsg = "Could not swap active camera"
-						println(errMsg)
-						statusLbl.text = errMsg
+						outputErrorMessage("Could not swap active camera")
 					} else {
 						println(resultPost)
 					}
@@ -469,6 +480,42 @@ open class FxController {
 			e.printStackTrace()
 		} catch (e: java.io.EOFException) {
 			println("EOFException calling DefaultApi#outputCamXxx")
+			e.printStackTrace()
+		}
+	}
+
+	private fun clientSetShowGrid(doShow: Boolean) {
+		val resultStat : Status = clientGetServerStatus(false) ?: return
+
+		val apiInstance = DefaultApi(serverUrlTxtfld.text)
+		try {
+			if (resultStat.result != Status.Result.success) {
+				outputErrorMessage("Error reading status from server")
+			} else {
+				val resultPost : Status = apiInstance.procGridShow(if (doShow) 1 else 0)
+				if (resultPost.result != Status.Result.success) {
+					outputErrorMessage("Could not toggle ShowGrid")
+				} else {
+					println(resultPost)
+				}
+			}
+		} catch (e: ClientException) {
+			println("4xx response calling DefaultApi#procGridShow")
+			e.printStackTrace()
+		} catch (e: ServerException) {
+			println("5xx response calling DefaultApi#procGridShow")
+			e.printStackTrace()
+		} catch (e: java.net.UnknownHostException) {
+			println("UnknownHostException calling DefaultApi#procGridShow")
+			e.printStackTrace()
+		} catch (e: java.net.ConnectException) {
+			println("ConnectException calling DefaultApi#procGridShow")
+			e.printStackTrace()
+		} catch (e: java.io.IOException) {
+			println("IOException calling DefaultApi#procGridShow")
+			e.printStackTrace()
+		} catch (e: java.io.EOFException) {
+			println("EOFException calling DefaultApi#procGridShow")
 			e.printStackTrace()
 		}
 	}
