@@ -1,5 +1,11 @@
-package org.ts.camera_streaming_client
+package org.ts.pnp_camera_server_client
 
+import io.swagger.client.apis.DefaultApi
+import io.swagger.client.infrastructure.ClientException
+import io.swagger.client.infrastructure.ServerException
+import io.swagger.client.models.SetPointDelta
+import io.swagger.client.models.SetPointDeltaDual
+import io.swagger.client.models.Status
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.control.Button
@@ -13,7 +19,9 @@ import org.opencv.core.Mat
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 import org.opencv.videoio.VideoCapture
-import org.ts.camera_streaming_client.utils.Utils
+import org.ts.pnp_camera_server_client.utils.Utils
+import java.net.ConnectException
+import java.net.UnknownHostException
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -137,6 +145,28 @@ open class FxController {
 
 			// stop the timer
 			this.stopAcquisition()
+		}
+
+		//
+		if (cameraActive) {
+			val apiInstance = DefaultApi("http://rpi5pnp:8090")
+			val body = SetPointDeltaDual(1, 2, 3, 4)
+			try {
+				val result : Status = apiInstance.procTrDyndelta(body)
+				println(result)
+			} catch (e: ClientException) {
+				println("4xx response calling DefaultApi#procTrDyndelta")
+				e.printStackTrace()
+			} catch (e: ServerException) {
+				println("5xx response calling DefaultApi#procTrDyndelta")
+				e.printStackTrace()
+			} catch (e: UnknownHostException) {
+				println("UnknownHostException calling DefaultApi#procTrDyndelta")
+				e.printStackTrace()
+			} catch (e: ConnectException) {
+				println("ConnectException calling DefaultApi#procTrDyndelta")
+				e.printStackTrace()
+			}
 		}
 	}
 

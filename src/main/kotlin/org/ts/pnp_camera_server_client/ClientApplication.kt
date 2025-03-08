@@ -1,4 +1,4 @@
-package org.ts.camera_streaming_client
+package org.ts.pnp_camera_server_client
 
 import javafx.application.Application
 import javafx.application.Platform
