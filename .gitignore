@@ -1,3 +1,6 @@
+build_openapi_client/*.jar
+build_openapi_client/pnp_openapi_client/
+
 build_opencv/**/build/
 build_opencv/**/opencv-*/
 
