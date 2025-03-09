@@ -9,6 +9,7 @@ import javafx.scene.layout.BorderPane
 import javafx.stage.Stage
 import javafx.stage.WindowEvent
 
+
 class ClientApplication : Application() {
 	override fun start(primaryStage: Stage) {
 		try {
@@ -33,7 +34,7 @@ class ClientApplication : Application() {
 
 			// set the proper behavior on closing the application
 			val controller: FxController = loader.getController<FxController>()
-			primaryStage.onCloseRequest = (EventHandler<WindowEvent?> { controller.setClosed() })
+			primaryStage.onCloseRequest = EventHandler<WindowEvent?> { controller.setClosed() }
 
 			// add event handler for window size changes
 			scene.widthProperty().addListener { _, oldSceneWidth, newSceneWidth ->
@@ -47,7 +48,7 @@ class ClientApplication : Application() {
 
 			Platform.runLater {
 				//println("runLater: Main window has been opened")
-				controller.externalInitWindowSize()
+				controller.initWindowSize()
 			}
 		} catch (e: Exception) {
 			e.printStackTrace()

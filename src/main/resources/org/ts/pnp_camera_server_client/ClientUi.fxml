@@ -44,7 +44,7 @@
                                  <children>
                                     <VBox alignment="TOP_CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                        <children>
-                                          <Button fx:id="connectBtn" alignment="center" onAction="#evtConnect" text="Connect" />
+                                          <Button fx:id="conConnectBtn" alignment="center" onAction="#evtConConnect" text="Connect" />
                                           <GridPane>
                                             <columnConstraints>
                                               <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />

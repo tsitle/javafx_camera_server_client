@@ -1,6 +1,12 @@
 package org.ts.pnp_camera_server_client
 
 import javafx.application.Platform
+import javafx.beans.property.BooleanProperty
+import javafx.beans.property.IntegerProperty
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleIntegerProperty
+import javafx.beans.property.SimpleStringProperty
+import javafx.beans.property.StringProperty
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.control.Button
@@ -11,11 +17,6 @@ import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.AnchorPane
 import org.openapitools.client.apis.DefaultApi
-import org.openapitools.client.infrastructure.ApiClient
-import org.openapitools.client.infrastructure.ClientException
-import org.openapitools.client.infrastructure.ServerException
-import org.openapitools.client.models.Status
-import org.openapitools.client.models.StatusCams
 import org.opencv.core.Core
 import org.opencv.core.Mat
 import org.opencv.core.Size
@@ -34,7 +35,7 @@ fun Double.format(digits: Int) = "%.${digits}f".format(this)
 
 open class FxController {
 	@FXML
-	private lateinit var connectBtn: Button
+	private lateinit var conConnectBtn: Button
 	@FXML
 	private lateinit var imageAnchorPane: AnchorPane
 	@FXML
@@ -65,9 +66,6 @@ open class FxController {
 	// the OpenCV object that realizes the video capture
 	private var capture: VideoCapture? = null
 
-	// a flag to change the button behavior
-	private var cameraActive = false
-
 	// width to height ratio of the camera image
 	private var cameraRatio = -1.0
 
@@ -80,8 +78,14 @@ open class FxController {
 	// convert the output image to grayscale?
 	private val cameraToGray: Boolean = false
 
-	// client ID
-	private val clientId: Int = (Random.nextDouble() * 1000.0).toInt()
+	// observable properties
+	private val uiPropConnection: BooleanProperty = SimpleBooleanProperty(false)
+	private val uiPropClientId: IntegerProperty = SimpleIntegerProperty(0)
+	private val uiPropStatus: StringProperty = SimpleStringProperty("-")
+	private val uiPropCtrlShowGrid: BooleanProperty = SimpleBooleanProperty(false)
+
+	// API Client Functions Wrapper
+	private var apiClientFncs: ApiClientFncs? = null
 
 	@FXML
 	protected fun initialize() {
@@ -90,7 +94,30 @@ open class FxController {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
 
 		//
-		println("Client ID=${clientId}")
+		uiPropClientId.subscribe { it -> println("Client ID: ${it.toInt()}") }
+		uiPropClientId.value = (Random.nextDouble() * 1000.0).toInt()
+
+		//
+		statusLbl.textProperty().bind(uiPropStatus)
+		statusLbl.textProperty().subscribe { it -> println("Status: '$it'") }
+
+		//
+		uiPropCtrlShowGrid.subscribe { it ->
+				println("Show Grid: $it")
+				ctrlShowGridCbx.isSelected = it
+			}
+
+		//
+		uiPropConnection.subscribe { it ->
+				serverUrlTxtfld.isDisable = it
+				serverApiKeyTxtfld.isDisable = it
+
+				ctrlCamLeftBtn.isDisable = ! it
+				ctrlCamBothBtn.isDisable = ! it
+				ctrlCamRightBtn.isDisable = ! it
+
+				ctrlShowGridCbx.isDisable = ! it
+			}
 
 		//
 		this.capture = VideoCapture()
@@ -108,83 +135,20 @@ open class FxController {
 				}
 				if (++readStatusTo == 10) {
 					Platform.runLater {
-						clientGetServerStatus(true)
+						apiClientFncs?.getServerStatus(true)
 					}
 					readStatusTo = 0
 				}
 			}
 			println("ending threadStatus")
 		}
-		threadStatus.isDaemon = true
+		threadStatus.isDaemon = false
 		threadStatus.start()
 
 		// load camera stream
 		if (serverUrlTxtfld.text.isNotEmpty() && serverApiKeyTxtfld.text.isNotEmpty()) {
-			connectBtn.fire()
+			conConnectBtn.fire()
 		}
-	}
-
-	/**
-	 * Event: Button "Connect" pressed
-	 *
-	 * @param event
-	 */
-	@FXML
-	protected fun evtConnect(event: ActionEvent?) {
-		// update UI
-		serverUrlTxtfld.isDisable = true
-		serverApiKeyTxtfld.isDisable = true
-		//
-		if (! this.cameraActive) {
-			// start the video capture
-			if (serverUrlTxtfld.text.isNotEmpty() && serverApiKeyTxtfld.text.isNotEmpty()) {
-				capture?.open("${serverUrlTxtfld.text}/stream.mjpeg?cid=${clientId}")
-			}
-
-			// is the video stream available?
-			if (capture?.isOpened == true) {
-				this.cameraActive = true
-
-				// set API key
-				ApiClient.apiKey["X-API-KEY"] = serverApiKeyTxtfld.text
-
-				// grab a frame every x ms (== 1000 / y frames/sec)
-				val frameGrabber = Runnable {  // effectively grab and process a single frame
-					val frame = grabFrame()
-					// convert and show the frame
-					val imageToShow: Image? = Utils.mat2Image(frame)
-					updateImageView(currentFrame, imageToShow!!)
-				}
-
-				if (this.timerFrames?.isShutdown == true) {
-					this.timerFrames = Executors.newSingleThreadScheduledExecutor()
-				}
-				this.timerFrames?.scheduleAtFixedRate(
-						frameGrabber,
-						0,
-						round(1000.0 / cameraOutputFps.toDouble()).toLong(),
-						TimeUnit.MILLISECONDS
-					)
-
-				// update UI
-				connectBtn.text = "Disconnect"
-				statusLbl.text = "Connected"
-			} else {
-				System.err.println("Could not open server connection...")
-				statusLbl.text = "Could not open server connection"
-			}
-		} else {
-			// the camera is not active at this point
-			this.cameraActive = false
-			// update UI
-			connectBtn.text = "Connect"
-			statusLbl.text = "Disconnected"
-
-			// stop the timer
-			this.stopAcquisition()
-		}
-
-		updateUiElements()
 	}
 
 	/**
@@ -277,6 +241,12 @@ open class FxController {
 		this.doKillThreadStatus = true
 	}
 
+	fun initWindowSize() {
+		//println("externalInitWindowSize: anchor ${imageAnchorPane.width.toInt()}x${imageAnchorPane.height.toInt()}")
+		cameraRatio = imageAnchorPane.width / imageAnchorPane.height
+		updateWindowSize(imageAnchorPane.width.toInt(), imageAnchorPane.height.toInt() + bottomAnchorPane.height.toInt())
+	}
+
 	fun updateWindowSize(newWidth: Int, newHeight: Int) {
 		//println("updateWindowSize: wnd ${newWidth}x${newHeight}")
 
@@ -309,26 +279,70 @@ open class FxController {
 		//println("updateWindowSize: img ${currentFrame.fitWidth}x${currentFrame.fitHeight} (anchor.w: ${imageAnchorPane.width.toInt()}) (bot.h: ${bottomAnchorPane.height.toInt()})")
 	}
 
-	fun externalInitWindowSize() {
-		//println("externalInitWindowSize: anchor ${imageAnchorPane.width.toInt()}x${imageAnchorPane.height.toInt()}")
-		cameraRatio = imageAnchorPane.width / imageAnchorPane.height
-		updateWindowSize(imageAnchorPane.width.toInt(), imageAnchorPane.height.toInt() + bottomAnchorPane.height.toInt())
-	}
+	/**
+	 * Event: Button "Connection: Connect" pressed
+	 *
+	 * @param event
+	 */
+	@FXML
+	protected fun evtConConnect(event: ActionEvent?) {
+		// update UI
+		serverUrlTxtfld.isDisable = true
+		serverApiKeyTxtfld.isDisable = true
+		//
+		if (! uiPropConnection.value) {
+			if (serverUrlTxtfld.text.isNotEmpty() && serverApiKeyTxtfld.text.isNotEmpty()) {
+				apiClientFncs = ApiClientFncs(
+						serverUrlTxtfld.text,
+						serverApiKeyTxtfld.text,
+						uiPropConnection,
+						uiPropClientId,
+						uiPropStatus,
+						uiPropCtrlShowGrid
+				)
+				// start the video capture
+				capture?.open("${serverUrlTxtfld.text}/stream.mjpeg?cid=${uiPropClientId.value}")
+			}
 
-	private fun updateUiElements() {
-		serverUrlTxtfld.isDisable = this.cameraActive
-		serverApiKeyTxtfld.isDisable = this.cameraActive
+			// is the video stream available?
+			if (capture?.isOpened == true) {
+				uiPropConnection.value = true
 
-		ctrlCamLeftBtn.isDisable = ! this.cameraActive
-		ctrlCamBothBtn.isDisable = ! this.cameraActive
-		ctrlCamRightBtn.isDisable = ! this.cameraActive
+				// grab a frame every x ms (== 1000 / y frames/sec)
+				val frameGrabber = Runnable {  // effectively grab and process a single frame
+					val frame = grabFrame()
+					// convert and show the frame
+					val imageToShow: Image? = Utils.mat2Image(frame)
+					updateImageView(currentFrame, imageToShow!!)
+				}
 
-		ctrlShowGridCbx.isDisable = ! this.cameraActive
-	}
+				if (this.timerFrames?.isShutdown == true) {
+					this.timerFrames = Executors.newSingleThreadScheduledExecutor()
+				}
+				this.timerFrames?.scheduleAtFixedRate(
+						frameGrabber,
+						0,
+						round(1000.0 / cameraOutputFps.toDouble()).toLong(),
+						TimeUnit.MILLISECONDS
+				)
 
-	private fun outputErrorMessage(errMsg: String) {
-		println(errMsg)
-		statusLbl.text = errMsg
+				// update UI
+				conConnectBtn.text = "Disconnect"
+				uiPropStatus.set("Connected")
+			} else {
+				System.err.println("Could not open server connection...")
+				uiPropStatus.set("Could not open server connection")
+			}
+		} else {
+			// the camera is not active at this point
+			uiPropConnection.value = false
+			// update UI
+			conConnectBtn.text = "Connect"
+			uiPropStatus.set("Disconnected")
+
+			// stop the timer
+			this.stopAcquisition()
+		}
 	}
 
 	/**
@@ -338,7 +352,7 @@ open class FxController {
 	 */
 	@FXML
 	protected fun evtCtrlCamLeft(event: ActionEvent?) {
-		clientSetActiveCam(DefaultApi.CamOutputCamEnable.L)
+		apiClientFncs?.setActiveCam(DefaultApi.CamOutputCamEnable.L)
 	}
 
 	/**
@@ -348,7 +362,7 @@ open class FxController {
 	 */
 	@FXML
 	protected fun evtCtrlCamBoth(event: ActionEvent?) {
-		clientSetActiveCam(DefaultApi.CamOutputCamEnable.BOTH)
+		apiClientFncs?.setActiveCam(DefaultApi.CamOutputCamEnable.BOTH)
 	}
 
 	/**
@@ -358,7 +372,7 @@ open class FxController {
 	 */
 	@FXML
 	protected fun evtCtrlCamRight(event: ActionEvent?) {
-		clientSetActiveCam(DefaultApi.CamOutputCamEnable.R)
+		apiClientFncs?.setActiveCam(DefaultApi.CamOutputCamEnable.R)
 	}
 
 	/**
@@ -368,155 +382,6 @@ open class FxController {
 	 */
 	@FXML
 	protected fun evtCtrlShowGrid(event: ActionEvent?) {
-		clientSetShowGrid(ctrlShowGridCbx.isSelected)
-	}
-
-	private fun clientGetServerStatus(isForTimer: Boolean): Status? {
-		if (! cameraActive) {
-			return null
-		}
-		//
-		val apiInstance = DefaultApi(serverUrlTxtfld.text)
-		try {
-			val resultStat : Status = apiInstance.getStatus(clientId)
-			if (resultStat.result != Status.Result.success) {
-				outputErrorMessage("Error reading status from server")
-			} else {
-				if (isForTimer) {
-					statusLbl.text = "Connected [${
-							resultStat.cpuTemperature?.toDouble()?.format(2)
-						} °C, FPS ${resultStat.framerate}]"
-					ctrlShowGridCbx.isSelected = resultStat.procGrid?.show ?: false
-				}
-				return resultStat
-			}
-		} catch (e: ClientException) {
-			println("4xx response calling DefaultApi#getStatus")
-			e.printStackTrace()
-		} catch (e: ServerException) {
-			println("5xx response calling DefaultApi#getStatus")
-			e.printStackTrace()
-		} catch (e: java.net.UnknownHostException) {
-			println("UnknownHostException calling DefaultApi#getStatus")
-			e.printStackTrace()
-		} catch (e: java.net.ConnectException) {
-			println("ConnectException calling DefaultApi#getStatus")
-			e.printStackTrace()
-		} catch (e: java.io.IOException) {
-			println("IOException calling DefaultApi#getStatus")
-			e.printStackTrace()
-		} catch (e: java.io.EOFException) {
-			println("EOFException calling DefaultApi#getStatus")
-			e.printStackTrace()
-		}
-		return null
-	}
-
-	private fun clientSetActiveCam(cam: DefaultApi.CamOutputCamEnable) {
-		val resultStat : Status = clientGetServerStatus(false) ?: return
-
-		val apiInstance = DefaultApi(serverUrlTxtfld.text)
-		try {
-			if (resultStat.result != Status.Result.success) {
-				outputErrorMessage("Error reading status from server")
-			} else {
-				var doNothing = false
-				var doSwap = false
-				var doCamEnable : DefaultApi.CamOutputCamEnable? = null
-				var doCamDisable : DefaultApi.CamOutputCamDisable? = null
-				if ((cam == DefaultApi.CamOutputCamEnable.L && resultStat.outputCams == StatusCams.L) ||
-						(cam == DefaultApi.CamOutputCamEnable.R && resultStat.outputCams == StatusCams.R) ||
-						(cam == DefaultApi.CamOutputCamEnable.BOTH && resultStat.outputCams == StatusCams.BOTH)) {
-					doNothing = true
-				} else if ((cam == DefaultApi.CamOutputCamEnable.L && resultStat.outputCams == StatusCams.R) ||
-						(cam == DefaultApi.CamOutputCamEnable.R && resultStat.outputCams == StatusCams.L)) {
-					doSwap = true
-				} else if (cam == DefaultApi.CamOutputCamEnable.BOTH && resultStat.outputCams == StatusCams.L) {
-					doCamEnable = DefaultApi.CamOutputCamEnable.R
-				} else if (cam == DefaultApi.CamOutputCamEnable.BOTH && resultStat.outputCams == StatusCams.R) {
-					doCamEnable = DefaultApi.CamOutputCamEnable.L
-				} else if (cam == DefaultApi.CamOutputCamEnable.L && resultStat.outputCams == StatusCams.BOTH) {
-					doCamDisable = DefaultApi.CamOutputCamDisable.R
-				} else if (cam == DefaultApi.CamOutputCamEnable.R && resultStat.outputCams == StatusCams.BOTH) {
-					doCamDisable = DefaultApi.CamOutputCamDisable.L
-				}
-				if (! doNothing && doCamEnable != null) {
-					val resultPost : Status = apiInstance.outputCamEnable(doCamEnable)
-					if (resultPost.result != Status.Result.success) {
-						outputErrorMessage("Could not enable camera $doCamEnable")
-					} else {
-						println(resultPost)
-					}
-				} else if (! doNothing && doCamDisable != null) {
-					val resultPost : Status = apiInstance.outputCamDisable(doCamDisable)
-					if (resultPost.result != Status.Result.success) {
-						outputErrorMessage("Could not deactivate camera $doCamDisable")
-					} else {
-						println(resultPost)
-					}
-				} else if (! doNothing && doSwap) {
-					val resultPost : Status = apiInstance.outputCamSwap()
-					if (resultPost.result != Status.Result.success) {
-						outputErrorMessage("Could not swap active camera")
-					} else {
-						println(resultPost)
-					}
-				}
-			}
-		} catch (e: ClientException) {
-			println("4xx response calling DefaultApi#outputCamXxx")
-			e.printStackTrace()
-		} catch (e: ServerException) {
-			println("5xx response calling DefaultApi#outputCamXxx")
-			e.printStackTrace()
-		} catch (e: java.net.UnknownHostException) {
-			println("UnknownHostException calling DefaultApi#outputCamXxx")
-			e.printStackTrace()
-		} catch (e: java.net.ConnectException) {
-			println("ConnectException calling DefaultApi#outputCamXxx")
-			e.printStackTrace()
-		} catch (e: java.io.IOException) {
-			println("IOException calling DefaultApi#outputCamXxx")
-			e.printStackTrace()
-		} catch (e: java.io.EOFException) {
-			println("EOFException calling DefaultApi#outputCamXxx")
-			e.printStackTrace()
-		}
-	}
-
-	private fun clientSetShowGrid(doShow: Boolean) {
-		val resultStat : Status = clientGetServerStatus(false) ?: return
-
-		val apiInstance = DefaultApi(serverUrlTxtfld.text)
-		try {
-			if (resultStat.result != Status.Result.success) {
-				outputErrorMessage("Error reading status from server")
-			} else {
-				val resultPost : Status = apiInstance.procGridShow(if (doShow) 1 else 0)
-				if (resultPost.result != Status.Result.success) {
-					outputErrorMessage("Could not toggle ShowGrid")
-				} else {
-					println(resultPost)
-				}
-			}
-		} catch (e: ClientException) {
-			println("4xx response calling DefaultApi#procGridShow")
-			e.printStackTrace()
-		} catch (e: ServerException) {
-			println("5xx response calling DefaultApi#procGridShow")
-			e.printStackTrace()
-		} catch (e: java.net.UnknownHostException) {
-			println("UnknownHostException calling DefaultApi#procGridShow")
-			e.printStackTrace()
-		} catch (e: java.net.ConnectException) {
-			println("ConnectException calling DefaultApi#procGridShow")
-			e.printStackTrace()
-		} catch (e: java.io.IOException) {
-			println("IOException calling DefaultApi#procGridShow")
-			e.printStackTrace()
-		} catch (e: java.io.EOFException) {
-			println("EOFException calling DefaultApi#procGridShow")
-			e.printStackTrace()
-		}
+		apiClientFncs?.setShowGrid(ctrlShowGridCbx.isSelected)
 	}
 }
