@@ -7,121 +7,56 @@
 plugins {
 	id 'java'
 	id 'application'
-	id 'org.jetbrains.kotlin.jvm' version '1.9.23'
-	//id 'org.javamodularity.moduleplugin' version '1.8.15'
-	id 'org.openjfx.javafxplugin' version '0.1.0'
-	//id 'org.beryx.jlink' version '2.25.0'
-	id 'org.beryx.runtime' version '1.13.0'
+	id 'org.jetbrains.kotlin.jvm' version '2.1.10'
+	id 'org.openjfx.javafxplugin' version '0.1.0'  // see https://github.com/openjfx/javafx-gradle-plugin
 }
 
 group 'org.ts'
 version '1.0-SNAPSHOT'
-
-def openCvJar = 'build_opencv/4.11.0/build/bin/opencv-4110.jar'
-def openCvLibFolder = 'build_opencv/4.11.0/build/lib/'
-
 
 repositories {
 	mavenCentral()
 }
 
 ext {
-	junitVersion = '5.10.2'
+	//javaJdkPathMac = '/Library/Java/JavaVirtualMachines/liberica-jdk-21.0.6-full-macos_x64/Contents/Home'
+	//javaFxSdkPathMac = '/Library/Java/Extensions/javafx-sdk-23.0.2-osx_x64/lib'
+	//javaFxJmodsPathMac = '/Library/Java/Extensions/javafx-jmods-23.0.2-osx_x64'
+
+	openCvJar = 'build_opencv/4.11.0/build/bin/opencv-4110.jar'
+	openCvLibFolder = 'build_opencv/4.11.0/build/lib/'
 }
 
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
 }
 
 application {
-	//mainModule = 'org.ts.pnp_camera_server_client'
 	mainClass = 'org.ts.pnp_camera_server_client.ClientApplication'
 	applicationDefaultJvmArgs += '-Djava.library.path=' + openCvLibFolder
 }
 
-kotlin {
-	jvmToolchain(17)
-}
-
 java {
 	toolchain {
-		// Kotlin does not yet support 23 JDK target
-		//languageVersion.set(JavaLanguageVersion.of(23))  // JDK 23 is only required here because my OpenCV build was compiled with JDK 23
-		//
-		languageVersion.set(JavaLanguageVersion.of(17))
+		// select same JDK version as was used to build the OpenCV library with
+		languageVersion.set(JavaLanguageVersion.of(21))
+		vendor.set(JvmVendorSpec.BELLSOFT)
 	}
 }
 
 javafx {
-	version = '22.0.1'
+	version = '23.0.2'  // for OpenJFX 23 the minimum JDK is 21
 	modules = ['javafx.controls', 'javafx.fxml', 'javafx.swing']
 }
 
-/*configurations.configureEach {
-	exclude group: "com.squareup.moshi", module: "moshi"
-}*/
-/*configurations.configureEach {
-	resolutionStrategy.force "com.squareup.moshi:moshi:1.15.2"
-	resolutionStrategy.force "com.squareup.moshi:moshi-kotlin:1.15.2"
-}*/
-
 dependencies {
-	implementation('org.controlsfx:controlsfx:11.2.1')
-	implementation('org.kordamp.bootstrapfx:bootstrapfx-core:0.4.0')
+	implementation('org.kordamp.bootstrapfx:bootstrapfx-core:0.4.0')  // see https://github.com/kordamp/bootstrapfx
 
-	// for Swagger:
-	implementation('com.squareup.moshi:moshi-kotlin:1.15.2') {
-		exclude group: "com.squareup.moshi", module: "moshi"
-	}
-	/*implementation('com.squareup.moshi:moshi-adapters:1.14.0') {
-		exclude group: "com.squareup.moshi", module: "moshi"
-	}*/
-	implementation('com.squareup.moshi:moshi:1.15.2') {
-		exclude group: "com.squareup.moshi", module: "moshi"
-	}
+	// for OpenAPI generated client:
+	implementation('com.squareup.moshi:moshi-kotlin:1.15.2')
+	implementation('com.squareup.moshi:moshi:1.15.2')
 	implementation('com.squareup.okhttp3:okhttp:4.12.0')
 
 	implementation files(openCvJar)
-
-	//testImplementation('org.junit.jupiter:junit-jupiter-api:${junitVersion}')
-	//testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:${junitVersion}')
-}
-
-test {
-	useJUnitPlatform()
-}
-
-/*jlink {
-	imageZip = project.file('${buildDir}/distributions/app-${javafx.platform.classifier}.zip')
-	options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
-	launcher {
-		name = 'app'
-	}
-}
-
-jlinkZip {
-	group = 'distribution'
-}*/
-
-run {
-	jvmArgs = ['-Djava.library.path=' + openCvLibFolder]
-}
-
-// Runtime for non-modular projects
-runtime {
-	// some default options
-	options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
-	// list of required modules (instead of using modules-info.java
-	modules = [
-			'kotlin.stdlib',
-			'javafx.controls',
-			'javafx.fxml',
-			'javafx.swing',
-			'org.controlsfx.controls',
-			'opencv',
-			'okhttp3',
-			'com.squareup.moshi',
-			'com.squareup.moshi.kotlin'
-		]
 }
