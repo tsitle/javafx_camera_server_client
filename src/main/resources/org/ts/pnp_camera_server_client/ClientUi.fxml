@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.String?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
@@ -44,7 +45,11 @@
                                  <children>
                                     <VBox alignment="TOP_CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                        <children>
-                                          <Button fx:id="conConnectBtn" alignment="center" onAction="#evtConConnect" text="Connect" />
+                                          <Button fx:id="conConnectBtn" alignment="center" onAction="#evtConConnect" text="Connect">
+                                             <styleClass>
+                                                <String fx:value="btn" />
+                                                <String fx:value="btn-default" />
+                                             </styleClass></Button>
                                           <GridPane>
                                             <columnConstraints>
                                               <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -92,13 +97,25 @@
                                        <children>
                                           <HBox alignment="TOP_CENTER">
                                              <children>
-                                                <Button fx:id="ctrlCamLeftBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlCamLeft" text="CAM L" />
+                                                 <Button fx:id="ctrlCamLeftBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlCamLeft" text="CAM L">
+                                                     <styleClass>
+                                                         <String fx:value="btn" />
+                                                         <String fx:value="btn-default" />
+                                                     </styleClass></Button>
                                                 <Button fx:id="ctrlCamBothBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlCamBoth" text="CAM BOTH">
+                                                    <styleClass>
+                                                        <String fx:value="btn" />
+                                                        <String fx:value="btn-default" />
+                                                    </styleClass>
                                                    <HBox.margin>
                                                       <Insets left="15.0" right="15.0" />
                                                    </HBox.margin>
                                                 </Button>
-                                                <Button fx:id="ctrlCamRightBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlCamRight" text="CAM R" />
+                                                 <Button fx:id="ctrlCamRightBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlCamRight" text="CAM R">
+                                                     <styleClass>
+                                                         <String fx:value="btn" />
+                                                         <String fx:value="btn-default" />
+                                                     </styleClass></Button>
                                              </children>
                                              <padding>
                                                 <Insets bottom="15.0" />

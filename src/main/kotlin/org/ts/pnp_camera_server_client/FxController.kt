@@ -109,6 +109,9 @@ open class FxController {
 
 		//
 		uiPropConnection.subscribe { it ->
+				conConnectBtn.styleClass.removeAll("btn-danger", "btn-default", "btn-success")
+				conConnectBtn.styleClass.add(if (it) "btn-danger" else "btn-success")
+
 				serverUrlTxtfld.isDisable = it
 				serverApiKeyTxtfld.isDisable = it
 

@@ -8,6 +8,7 @@ import javafx.scene.Scene
 import javafx.scene.layout.BorderPane
 import javafx.stage.Stage
 import javafx.stage.WindowEvent
+import org.kordamp.bootstrapfx.BootstrapFX
 
 
 class ClientApplication : Application() {
@@ -21,12 +22,13 @@ class ClientApplication : Application() {
 
 			// create and style a scene
 			val scene = Scene(rootElement, 800.0, 600.0)
-			//scene.stylesheets.add(getResource("application.css").toExternalForm())
 
 			// create the stage with the given title and the previously created scene
 			primaryStage.title = "Camera Streaming Client"
 			primaryStage.scene = scene
 
+			// add CSS to scene
+			scene.stylesheets.add(BootstrapFX.bootstrapFXStylesheet())
 			scene.stylesheets.add(ClientApplication::class.java.getResource("styles.css")?.toExternalForm())
 
 			// show the GUI
