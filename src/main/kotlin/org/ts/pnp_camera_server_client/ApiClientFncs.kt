@@ -50,6 +50,24 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 						resultStat.cpuTemperature?.toDouble()?.format(2)
 					} °C, FPS ${resultStat.framerate}]"
 				uiProps!!.ctrlShowGrid.value = resultStat.procGrid?.show ?: false
+				when (resultStat.availOutputCams) {
+					StatusCams.L -> {
+						uiProps!!.ctrlCamAvailLeft.value = true
+						uiProps!!.ctrlCamAvailBoth.value = false
+						uiProps!!.ctrlCamAvailRight.value = false
+					}
+					StatusCams.R -> {
+						uiProps!!.ctrlCamAvailLeft.value = false
+						uiProps!!.ctrlCamAvailBoth.value = false
+						uiProps!!.ctrlCamAvailRight.value = true
+					}
+					else -> {
+						uiProps!!.ctrlCamAvailLeft.value = true
+						uiProps!!.ctrlCamAvailBoth.value = true
+						uiProps!!.ctrlCamAvailRight.value = true
+					}
+				}
+				uiProps!!.ctrlCamActive.value = resultStat.outputCams?.ordinal ?: -1
 			}
 			return resultStat
 		}

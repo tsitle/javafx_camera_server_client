@@ -11,6 +11,8 @@ import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.AnchorPane
 import org.openapitools.client.apis.DefaultApi
+import org.openapitools.client.models.Status
+import org.openapitools.client.models.StatusCams
 import org.opencv.core.Core
 import org.opencv.core.Mat
 import org.opencv.core.Size
@@ -85,6 +87,24 @@ open class FxController {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
 
 		//
+		initUiPropHandling()
+
+		//
+		this.capture = VideoCapture()
+		this.timerFrames = Executors.newSingleThreadScheduledExecutor()
+
+		// start the 'get server status' thread
+		val threadStatus = Thread(runnerGetServerStatusThread())
+		threadStatus.isDaemon = false
+		threadStatus.start()
+
+		// load camera stream
+		if (serverUrlTxtfld.text.isNotEmpty() && serverApiKeyTxtfld.text.isNotEmpty()) {
+			conConnectBtn.fire()
+		}
+	}
+
+	private fun initUiPropHandling() {
 		uiProps.clientId.subscribe { it -> println("Client ID: ${it.toInt()}") }
 		uiProps.clientId.value = (Random.nextDouble() * 1000.0).toInt()
 
@@ -106,43 +126,68 @@ open class FxController {
 				serverUrlTxtfld.isDisable = it
 				serverApiKeyTxtfld.isDisable = it
 
-				ctrlCamLeftBtn.isDisable = ! it
-				ctrlCamBothBtn.isDisable = ! it
-				ctrlCamRightBtn.isDisable = ! it
+				handleUiPropChangeForCtrlCamButtons()
 
 				ctrlShowGridCbx.isDisable = ! it
 			}
 
 		//
-		this.capture = VideoCapture()
-		this.timerFrames = Executors.newSingleThreadScheduledExecutor()
+		uiProps.ctrlCamAvailLeft.subscribe { _ -> handleUiPropChangeForCtrlCamButtons() }
+		uiProps.ctrlCamAvailBoth.subscribe { _ -> handleUiPropChangeForCtrlCamButtons() }
+		uiProps.ctrlCamAvailRight.subscribe { _ -> handleUiPropChangeForCtrlCamButtons() }
+		uiProps.ctrlCamActive.subscribe { _ -> handleUiPropChangeForCtrlCamButtons() }
+	}
 
-		// start the 'get server status' thread
-		val threadStatus = Thread {
-			var readStatusTo = 0
-			while (! doKillThreadStatus) {
-				try {
-					Thread.sleep(50)
-				} catch (e: InterruptedException) {
-					Thread.interrupted()
-					break
-				}
-				if (++readStatusTo == 10) {
-					Platform.runLater {
-						apiClientFncs?.getServerStatus(true)
-					}
-					readStatusTo = 0
-				}
+	private fun handleUiPropChangeForCtrlCamButtons() {
+		val tmpConnOpen = uiProps.connectionOpen.value
+		val tmpCtrlCamActive = uiProps.ctrlCamActive.value
+		ctrlCamLeftBtn.isDisable = ! (tmpConnOpen && uiProps.ctrlCamAvailLeft.value && tmpCtrlCamActive != StatusCams.L.ordinal)
+		ctrlCamBothBtn.isDisable = ! (tmpConnOpen && uiProps.ctrlCamAvailBoth.value && tmpCtrlCamActive != StatusCams.BOTH.ordinal)
+		ctrlCamRightBtn.isDisable = ! (tmpConnOpen && uiProps.ctrlCamAvailRight.value && tmpCtrlCamActive != StatusCams.R.ordinal)
+
+		val cssClassActive = "btn-primary"
+		val cssClassInactive = "btn-default"
+		for (btn in arrayOf(ctrlCamLeftBtn, ctrlCamBothBtn,  ctrlCamRightBtn)) {
+			btn.styleClass.removeAll(cssClassInactive, cssClassActive)
+		}
+		when (tmpCtrlCamActive) {
+			StatusCams.L.ordinal -> {
+				ctrlCamLeftBtn.styleClass.add(cssClassActive)
+				ctrlCamBothBtn.styleClass.add(cssClassInactive)
+				ctrlCamRightBtn.styleClass.add(cssClassInactive)
 			}
-			println("ending threadStatus")
+			StatusCams.BOTH.ordinal -> {
+				ctrlCamLeftBtn.styleClass.add(cssClassInactive)
+				ctrlCamBothBtn.styleClass.add(cssClassActive)
+				ctrlCamRightBtn.styleClass.add(cssClassInactive)
+			}
+			StatusCams.R.ordinal -> {
+				ctrlCamLeftBtn.styleClass.add(cssClassInactive)
+				ctrlCamBothBtn.styleClass.add(cssClassInactive)
+				ctrlCamRightBtn.styleClass.add(cssClassActive)
+			}
 		}
-		threadStatus.isDaemon = false
-		threadStatus.start()
+	}
 
-		// load camera stream
-		if (serverUrlTxtfld.text.isNotEmpty() && serverApiKeyTxtfld.text.isNotEmpty()) {
-			conConnectBtn.fire()
+	private fun runnerGetServerStatusThread() = Runnable {
+		var readStatusTo = 0
+		while (! doKillThreadStatus) {
+			try {
+				Thread.sleep(50)
+			} catch (e: InterruptedException) {
+				Thread.interrupted()
+				break
+			}
+			if (++readStatusTo == 10) {
+				Platform.runLater(runnerGetServerStatusSub())
+				readStatusTo = 0
+			}
 		}
+		println("ending threadStatus")
+	}
+
+	private fun runnerGetServerStatusSub() = Runnable {
+		apiClientFncs?.getServerStatus(true)
 	}
 
 	/**
@@ -274,6 +319,13 @@ open class FxController {
 	}
 
 	/**
+	 * Move focus away from last control (e.g. button) that has been clicked on
+	 */
+	private fun moveFocusAwayFromControls() {
+		imageAnchorPane.requestFocus()
+	}
+
+	/**
 	 * Event: Button "Connection: Connect" pressed
 	 *
 	 * @param event
@@ -334,6 +386,9 @@ open class FxController {
 			// stop the timer
 			this.stopAcquisition()
 		}
+
+		//
+		moveFocusAwayFromControls()
 	}
 
 	/**
@@ -344,6 +399,8 @@ open class FxController {
 	@FXML
 	protected fun evtCtrlCamLeft(event: ActionEvent?) {
 		apiClientFncs?.setActiveCam(DefaultApi.CamOutputCamEnable.L)
+		//
+		moveFocusAwayFromControls()
 	}
 
 	/**
@@ -354,6 +411,8 @@ open class FxController {
 	@FXML
 	protected fun evtCtrlCamBoth(event: ActionEvent?) {
 		apiClientFncs?.setActiveCam(DefaultApi.CamOutputCamEnable.BOTH)
+		//
+		moveFocusAwayFromControls()
 	}
 
 	/**
@@ -364,6 +423,8 @@ open class FxController {
 	@FXML
 	protected fun evtCtrlCamRight(event: ActionEvent?) {
 		apiClientFncs?.setActiveCam(DefaultApi.CamOutputCamEnable.R)
+		//
+		moveFocusAwayFromControls()
 	}
 
 	/**
@@ -374,5 +435,7 @@ open class FxController {
 	@FXML
 	protected fun evtCtrlShowGrid(event: ActionEvent?) {
 		apiClientFncs?.setShowGrid(ctrlShowGridCbx.isSelected)
+		//
+		moveFocusAwayFromControls()
 	}
 }

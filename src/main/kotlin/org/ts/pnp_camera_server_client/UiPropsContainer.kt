@@ -7,4 +7,8 @@ class UiPropsContainer {
 	val clientId: IntegerProperty = SimpleIntegerProperty(0)
 	val statusMsg: StringProperty = SimpleStringProperty("-")
 	val ctrlShowGrid: BooleanProperty = SimpleBooleanProperty(false)
+	val ctrlCamAvailLeft: BooleanProperty = SimpleBooleanProperty(false)
+	val ctrlCamAvailBoth: BooleanProperty = SimpleBooleanProperty(false)
+	val ctrlCamAvailRight: BooleanProperty = SimpleBooleanProperty(false)
+	val ctrlCamActive: IntegerProperty = SimpleIntegerProperty(0)
 }
