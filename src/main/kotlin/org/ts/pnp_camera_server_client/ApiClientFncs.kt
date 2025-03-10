@@ -1,8 +1,5 @@
 package org.ts.pnp_camera_server_client
 
-import javafx.beans.property.BooleanProperty
-import javafx.beans.property.IntegerProperty
-import javafx.beans.property.StringProperty
 import org.openapitools.client.apis.DefaultApi
 import org.openapitools.client.infrastructure.ApiClient
 import org.openapitools.client.models.Status
@@ -11,10 +8,7 @@ import org.openapitools.client.models.StatusCams
 
 class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 	private var apiInstance: DefaultApi? = null
-	private var uiPropConnection: BooleanProperty? = null
-	private var uiPropClientId: IntegerProperty? = null
-	private var uiPropStatus: StringProperty? = null
-	private var uiPropCtrlShowGrid: BooleanProperty? = null
+	private var uiProps: UiPropsContainer? = null
 
 	init {
 		if (serverUrl.isEmpty()) {
@@ -30,38 +24,32 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 	constructor(
 				serverUrl: String,
 				apiKey: String,
-				uiPropConnection: BooleanProperty,
-				uiPropClientId: IntegerProperty,
-				uiPropStatus: StringProperty,
-				uiPropShowGrid: BooleanProperty
+				uiProps: UiPropsContainer
 			) : this(serverUrl, apiKey) {
-		this.uiPropConnection = uiPropConnection
-		this.uiPropClientId = uiPropClientId
-		this.uiPropStatus = uiPropStatus
-		this.uiPropCtrlShowGrid = uiPropShowGrid
+		this.uiProps = uiProps
 	}
 
 	fun getServerStatus(isForTimer: Boolean): Status? {
-		if (! uiPropConnection!!.value) {
+		if (! uiProps!!.connectionOpen.value) {
 			return null
 		}
 		//
 		val resultStat: Status
 		try {
-			resultStat = apiInstance!!.getStatus(uiPropClientId!!.get())
+			resultStat = apiInstance!!.getStatus(uiProps!!.clientId.get())
 		} catch (e: Exception) {
-			uiPropStatus!!.set("Exception calling DefaultApi#getStatus: ${e.message}")
+			uiProps!!.statusMsg.set("Exception calling DefaultApi#getStatus: ${e.message}")
 			//e.printStackTrace()
 			return null
 		}
 		if (resultStat.result != Status.Result.success) {
-			uiPropStatus!!.set("Error reading status from server")
+			uiProps!!.statusMsg.set("Error reading status from server")
 		} else {
 			if (isForTimer) {
-				uiPropStatus!!.value = "Connected [${
+				uiProps!!.statusMsg.value = "Connected [${
 						resultStat.cpuTemperature?.toDouble()?.format(2)
 					} °C, FPS ${resultStat.framerate}]"
-				uiPropCtrlShowGrid!!.value = resultStat.procGrid?.show ?: false
+				uiProps!!.ctrlShowGrid.value = resultStat.procGrid?.show ?: false
 			}
 			return resultStat
 		}
@@ -73,15 +61,15 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 
 		try {
 			if (resultStat.result != Status.Result.success) {
-				uiPropStatus!!.set("Error reading status from server")
+				uiProps!!.statusMsg.set("Error reading status from server")
 			} else {
 				val resultPost : Status = apiInstance!!.procGridShow(if (doShow) 1 else 0)
 				if (resultPost.result != Status.Result.success) {
-					uiPropStatus!!.set("Could not toggle ShowGrid")
+					uiProps!!.statusMsg.set("Could not toggle ShowGrid")
 				}
 			}
 		} catch (e: Exception) {
-			uiPropStatus!!.set("Exception calling DefaultApi#procGridShow: ${e.message}")
+			uiProps!!.statusMsg.set("Exception calling DefaultApi#procGridShow: ${e.message}")
 			//e.printStackTrace()
 		}
 	}
@@ -91,7 +79,7 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 
 		try {
 			if (resultStat.result != Status.Result.success) {
-				uiPropStatus!!.set("Error reading status from server")
+				uiProps!!.statusMsg.set("Error reading status from server")
 			} else {
 				var doNothing = false
 				var doSwap = false
@@ -116,22 +104,22 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 				if (! doNothing && doCamEnable != null) {
 					val resultPost : Status = apiInstance!!.outputCamEnable(doCamEnable)
 					if (resultPost.result != Status.Result.success) {
-						uiPropStatus!!.set("Could not enable camera $doCamEnable")
+						uiProps!!.statusMsg.set("Could not enable camera $doCamEnable")
 					}
 				} else if (! doNothing && doCamDisable != null) {
 					val resultPost : Status = apiInstance!!.outputCamDisable(doCamDisable)
 					if (resultPost.result != Status.Result.success) {
-						uiPropStatus!!.set("Could not deactivate camera $doCamDisable")
+						uiProps!!.statusMsg.set("Could not deactivate camera $doCamDisable")
 					}
 				} else if (! doNothing && doSwap) {
 					val resultPost : Status = apiInstance!!.outputCamSwap()
 					if (resultPost.result != Status.Result.success) {
-						uiPropStatus!!.set("Could not swap active camera")
+						uiProps!!.statusMsg.set("Could not swap active camera")
 					}
 				}
 			}
 		} catch (e: Exception) {
-			uiPropStatus!!.set("Exception calling DefaultApi#outputCamXxx: ${e.message}")
+			uiProps!!.statusMsg.set("Exception calling DefaultApi#outputCamXxx: ${e.message}")
 			//e.printStackTrace()
 		}
 	}

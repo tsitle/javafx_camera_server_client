@@ -1,12 +1,6 @@
 package org.ts.pnp_camera_server_client
 
 import javafx.application.Platform
-import javafx.beans.property.BooleanProperty
-import javafx.beans.property.IntegerProperty
-import javafx.beans.property.SimpleBooleanProperty
-import javafx.beans.property.SimpleIntegerProperty
-import javafx.beans.property.SimpleStringProperty
-import javafx.beans.property.StringProperty
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.control.Button
@@ -79,10 +73,7 @@ open class FxController {
 	private val cameraToGray: Boolean = false
 
 	// observable properties
-	private val uiPropConnection: BooleanProperty = SimpleBooleanProperty(false)
-	private val uiPropClientId: IntegerProperty = SimpleIntegerProperty(0)
-	private val uiPropStatus: StringProperty = SimpleStringProperty("-")
-	private val uiPropCtrlShowGrid: BooleanProperty = SimpleBooleanProperty(false)
+	private val uiProps =  UiPropsContainer()
 
 	// API Client Functions Wrapper
 	private var apiClientFncs: ApiClientFncs? = null
@@ -94,21 +85,21 @@ open class FxController {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
 
 		//
-		uiPropClientId.subscribe { it -> println("Client ID: ${it.toInt()}") }
-		uiPropClientId.value = (Random.nextDouble() * 1000.0).toInt()
+		uiProps.clientId.subscribe { it -> println("Client ID: ${it.toInt()}") }
+		uiProps.clientId.value = (Random.nextDouble() * 1000.0).toInt()
 
 		//
-		statusLbl.textProperty().bind(uiPropStatus)
+		statusLbl.textProperty().bind(uiProps.statusMsg)
 		statusLbl.textProperty().subscribe { it -> println("Status: '$it'") }
 
 		//
-		uiPropCtrlShowGrid.subscribe { it ->
+		uiProps.ctrlShowGrid.subscribe { it ->
 				println("Show Grid: $it")
 				ctrlShowGridCbx.isSelected = it
 			}
 
 		//
-		uiPropConnection.subscribe { it ->
+		uiProps.connectionOpen.subscribe { it ->
 				conConnectBtn.styleClass.removeAll("btn-danger", "btn-default", "btn-success")
 				conConnectBtn.styleClass.add(if (it) "btn-danger" else "btn-success")
 
@@ -293,23 +284,20 @@ open class FxController {
 		serverUrlTxtfld.isDisable = true
 		serverApiKeyTxtfld.isDisable = true
 		//
-		if (! uiPropConnection.value) {
+		if (! uiProps.connectionOpen.value) {
 			if (serverUrlTxtfld.text.isNotEmpty() && serverApiKeyTxtfld.text.isNotEmpty()) {
 				apiClientFncs = ApiClientFncs(
 						serverUrlTxtfld.text,
 						serverApiKeyTxtfld.text,
-						uiPropConnection,
-						uiPropClientId,
-						uiPropStatus,
-						uiPropCtrlShowGrid
+						uiProps
 				)
 				// start the video capture
-				capture?.open("${serverUrlTxtfld.text}/stream.mjpeg?cid=${uiPropClientId.value}")
+				capture?.open("${serverUrlTxtfld.text}/stream.mjpeg?cid=${uiProps.clientId.value}")
 			}
 
 			// is the video stream available?
 			if (capture?.isOpened == true) {
-				uiPropConnection.value = true
+				uiProps.connectionOpen.value = true
 
 				// grab a frame every x ms (== 1000 / y frames/sec)
 				val frameGrabber = Runnable {  // effectively grab and process a single frame
@@ -331,17 +319,17 @@ open class FxController {
 
 				// update UI
 				conConnectBtn.text = "Disconnect"
-				uiPropStatus.set("Connected")
+				uiProps.statusMsg.set("Connected")
 			} else {
 				System.err.println("Could not open server connection...")
-				uiPropStatus.set("Could not open server connection")
+				uiProps.statusMsg.set("Could not open server connection")
 			}
 		} else {
 			// the camera is not active at this point
-			uiPropConnection.value = false
+			uiProps.connectionOpen.value = false
 			// update UI
 			conConnectBtn.text = "Connect"
-			uiPropStatus.set("Disconnected")
+			uiProps.statusMsg.set("Disconnected")
 
 			// stop the timer
 			this.stopAcquisition()
