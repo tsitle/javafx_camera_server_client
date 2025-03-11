@@ -52,6 +52,12 @@ open class FxController {
 	private lateinit var ctrlCamRightBtn: Button
 	@FXML
 	private lateinit var ctrlShowGridCbx: CheckBox
+	@FXML
+	private lateinit var ctrlZoomPlusBtn: Button
+	@FXML
+	private lateinit var ctrlZoomMinusBtn: Button
+	@FXML
+	private lateinit var ctrlZoom100Btn: Button
 
 	// a timer for acquiring the video stream
 	private var timerFrames: ScheduledExecutorService? = null
@@ -128,6 +134,8 @@ open class FxController {
 
 				handleUiPropChangeForCtrlCamButtons()
 
+				handleUiPropChangeForCtrlZoomButtons()
+
 				ctrlShowGridCbx.isDisable = ! it
 			}
 
@@ -136,6 +144,9 @@ open class FxController {
 		uiProps.ctrlCamAvailBoth.subscribe { _ -> handleUiPropChangeForCtrlCamButtons() }
 		uiProps.ctrlCamAvailRight.subscribe { _ -> handleUiPropChangeForCtrlCamButtons() }
 		uiProps.ctrlCamActive.subscribe { _ -> handleUiPropChangeForCtrlCamButtons() }
+
+		//
+		uiProps.ctrlZoom.subscribe { _ -> handleUiPropChangeForCtrlZoomButtons() }
 	}
 
 	private fun handleUiPropChangeForCtrlCamButtons() {
@@ -167,6 +178,14 @@ open class FxController {
 				ctrlCamRightBtn.styleClass.add(cssClassActive)
 			}
 		}
+	}
+
+	private fun handleUiPropChangeForCtrlZoomButtons() {
+		val tmpConnOpen = uiProps.connectionOpen.value
+		val tmpCtrlZoom = uiProps.ctrlZoom.value
+		ctrlZoomPlusBtn.isDisable = ! (tmpConnOpen && tmpCtrlZoom >= 0 && tmpCtrlZoom > 10)
+		ctrlZoomMinusBtn.isDisable = ! (tmpConnOpen && tmpCtrlZoom >= 0 && tmpCtrlZoom < 100)
+		ctrlZoom100Btn.isDisable = ! (tmpConnOpen && tmpCtrlZoom >= 0 && tmpCtrlZoom < 100)
 	}
 
 	private fun runnerGetServerStatusThread() = Runnable {
@@ -213,7 +232,7 @@ open class FxController {
 					val lastCameraRatio = cameraRatio
 
 					// scale the image
-					val orgWidth = frame.width()
+					/*val orgWidth = frame.width()
 					val orgHeight = frame.height()
 					cameraRatio = orgWidth.toDouble() / orgHeight.toDouble()
 					val resizedFrame = Mat()
@@ -224,7 +243,7 @@ open class FxController {
 					// update
 					if (cameraRatio > 0.0 && lastCameraRatio != cameraRatio && imageAnchorPane.width > 0.0) {
 						updateWindowSize(imageAnchorPane.width.toInt(), imageAnchorPane.height.toInt() + bottomAnchorPane.height.toInt())
-					}
+					}*/
 				}
 			} catch (e: Exception) {
 				System.err.println("Exception during image processing: $e")
@@ -435,6 +454,24 @@ open class FxController {
 	@FXML
 	protected fun evtCtrlShowGrid(event: ActionEvent?) {
 		apiClientFncs?.setShowGrid(ctrlShowGridCbx.isSelected)
+		//
+		moveFocusAwayFromControls()
+	}
+
+	/**
+	 * Event: Button "Controls: Zoom +/-/100%" pressed
+	 *
+	 * @param event
+	 */
+	@FXML
+	protected fun evtCtrlZoom(event: ActionEvent?) {
+		var nextZoomLevel = uiProps.ctrlZoom.value
+		when (event!!.target) {
+			ctrlZoomPlusBtn -> nextZoomLevel -= 10
+			ctrlZoomMinusBtn -> nextZoomLevel += 10
+			else -> nextZoomLevel = 100
+		}
+		apiClientFncs?.setZoom(nextZoomLevel)
 		//
 		moveFocusAwayFromControls()
 	}

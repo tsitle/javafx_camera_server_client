@@ -29,6 +29,11 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 		this.uiProps = uiProps
 	}
 
+	/**
+	 * Get server's status
+	 *
+	 * @param isForTimer Is function call is for status thread?
+	 */
 	fun getServerStatus(isForTimer: Boolean): Status? {
 		if (! uiProps!!.connectionOpen.value) {
 			return null
@@ -68,12 +73,18 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 					}
 				}
 				uiProps!!.ctrlCamActive.value = resultStat.outputCams?.ordinal ?: -1
+				uiProps!!.ctrlZoom.value = resultStat.procRoi?.sizePerc ?: -1
 			}
 			return resultStat
 		}
 		return null
 	}
 
+	/**
+	 * Enable or disable grid overlay
+	 *
+	 * @param doShow Show grid?
+	 */
 	fun setShowGrid(doShow: Boolean) {
 		val resultStat : Status = getServerStatus(false) ?: return
 
@@ -92,6 +103,11 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 		}
 	}
 
+	/**
+	 * Set active camera(s)
+	 *
+	 * @param cam Camera(s) to activate
+	 */
 	fun setActiveCam(cam: DefaultApi.CamOutputCamEnable) {
 		val resultStat : Status = getServerStatus(false) ?: return
 
@@ -138,6 +154,29 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 			}
 		} catch (e: Exception) {
 			uiProps!!.statusMsg.set("Exception calling DefaultApi#outputCamXxx: ${e.message}")
+			//e.printStackTrace()
+		}
+	}
+
+	/**
+	 * Set zoom level
+	 *
+	 * @param zoomPerc Zoom level in percent
+	 */
+	fun setZoom(zoomPerc: Int) {
+		val resultStat : Status = getServerStatus(false) ?: return
+
+		try {
+			if (resultStat.result != Status.Result.success) {
+				uiProps!!.statusMsg.set("Error reading status from server")
+			} else {
+				val resultPost : Status = apiInstance!!.procRoiSize(zoomPerc)
+				if (resultPost.result != Status.Result.success) {
+					uiProps!!.statusMsg.set("Could not set zoom level")
+				}
+			}
+		} catch (e: Exception) {
+			uiProps!!.statusMsg.set("Exception calling DefaultApi#procRoiSize: ${e.message}")
 			//e.printStackTrace()
 		}
 	}

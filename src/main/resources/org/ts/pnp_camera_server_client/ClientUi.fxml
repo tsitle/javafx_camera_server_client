@@ -117,11 +117,42 @@
                                                          <String fx:value="btn-default" />
                                                      </styleClass></Button>
                                              </children>
+                                             <VBox.margin>
+                                                <Insets bottom="15.0" />
+                                             </VBox.margin>
+                                          </HBox>
+                                          <CheckBox fx:id="ctrlShowGridCbx" mnemonicParsing="false" onAction="#evtCtrlShowGrid" text="Show Grid?" textFill="WHITE">
+                                             <VBox.margin>
+                                                <Insets bottom="15.0" />
+                                             </VBox.margin></CheckBox>
+                                          <HBox alignment="TOP_CENTER">
+                                             <children>
+                                                <Button fx:id="ctrlZoomPlusBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlZoom" text="+">
+                                                   <styleClass>
+                                                      <String fx:value="btn" />
+                                                      <String fx:value="btn-default" />
+                                                   </styleClass>
+                                                </Button>
+                                                <Button fx:id="ctrlZoomMinusBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlZoom" text="-">
+                                                   <styleClass>
+                                                      <String fx:value="btn" />
+                                                      <String fx:value="btn-default" />
+                                                   </styleClass>
+                                                   <HBox.margin>
+                                                      <Insets left="15.0" right="15.0" />
+                                                   </HBox.margin>
+                                                </Button>
+                                                <Button fx:id="ctrlZoom100Btn" disable="true" mnemonicParsing="false" onAction="#evtCtrlZoom" text="100%">
+                                                   <styleClass>
+                                                      <String fx:value="btn" />
+                                                      <String fx:value="btn-default" />
+                                                   </styleClass>
+                                                </Button>
+                                             </children>
                                              <padding>
                                                 <Insets bottom="15.0" />
                                              </padding>
                                           </HBox>
-                                          <CheckBox fx:id="ctrlShowGridCbx" mnemonicParsing="false" onAction="#evtCtrlShowGrid" text="Show Grid?" textFill="WHITE" />
                                        </children>
                                     </VBox>
                                  </children>
