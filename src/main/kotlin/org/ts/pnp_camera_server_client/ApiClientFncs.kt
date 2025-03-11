@@ -73,7 +73,8 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 					}
 				}
 				uiProps!!.ctrlCamActive.value = resultStat.outputCams?.ordinal ?: -1
-				uiProps!!.ctrlZoom.value = resultStat.procRoi?.sizePerc ?: -1
+				uiProps!!.ctrlZoomLevel.value = resultStat.procRoi?.sizePerc ?: -1
+				uiProps!!.ctrlZoomAllowed.value = resultStat.enabledProc?.scale ?: false
 			}
 			return resultStat
 		}
