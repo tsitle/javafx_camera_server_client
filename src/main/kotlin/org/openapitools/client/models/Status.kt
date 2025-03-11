@@ -48,6 +48,7 @@ import com.squareup.moshi.JsonClass
  * @param procTr 
  * @param resolutionInputStream 
  * @param resolutionOutput 
+ * @param version 
  */
 
 
@@ -99,7 +100,10 @@ data class Status (
     val resolutionInputStream: StatusResolution? = null,
 
     @Json(name = "resolutionOutput")
-    val resolutionOutput: StatusResolution? = null
+    val resolutionOutput: StatusResolution? = null,
+
+    @Json(name = "version")
+    val version: kotlin.String? = null
 
 ) {
 

@@ -29,6 +29,7 @@ import com.squareup.moshi.JsonClass
  * @param overlCam 
  * @param pt 
  * @param roi 
+ * @param scale 
  * @param tr 
  */
 
@@ -55,6 +56,9 @@ data class StatusEnabledProc (
 
     @Json(name = "roi")
     val roi: kotlin.Boolean? = null,
+
+    @Json(name = "scale")
+    val scale: kotlin.Boolean? = null,
 
     @Json(name = "tr")
     val tr: kotlin.Boolean? = null
