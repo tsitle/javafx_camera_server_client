@@ -86,6 +86,9 @@ open class FxController {
 	// API Client Functions Wrapper
 	private var apiClientFncs: ApiClientFncs? = null
 
+	// has the server connection been lost?
+	private var connectionLost = false
+
 	@FXML
 	protected fun initialize() {
 		// load the native OpenCV library
@@ -128,6 +131,7 @@ open class FxController {
 		uiProps.connectionOpen.subscribe { it ->
 				conConnectBtn.styleClass.removeAll("btn-danger", "btn-default", "btn-success")
 				conConnectBtn.styleClass.add(if (it) "btn-danger" else "btn-success")
+				conConnectBtn.text = (if (it) "Disconnect" else "Connect")
 
 				serverUrlTxtfld.isDisable = it
 				serverApiKeyTxtfld.isDisable = it
@@ -206,7 +210,13 @@ open class FxController {
 	}
 
 	private fun runnerGetServerStatusSub() = Runnable {
-		apiClientFncs?.getServerStatus(true)
+		if (connectionLost) {
+			uiProps.connectionOpen.value = false
+			uiProps.statusMsg.value = "Connection lost"
+			connectionLost = false
+		} else if (capture?.isOpened == true) {
+			apiClientFncs?.getServerStatus(true)
+		}
 	}
 
 	/**
@@ -215,16 +225,20 @@ open class FxController {
 	 * @return the [Mat] to show
 	 */
 	private fun grabFrame(): Mat {
-		var frame = Mat()
+		val frame = Mat()
 
 		// check if the capture is open
 		if (capture?.isOpened == true) {
 			try {
 				// read the current frame
-				capture?.read(frame)
+				val tmpRes = capture?.read(frame) ?: false
+				if (! tmpRes) {
+					connectionLost = true
+					capture?.release()
+				}
 
 				// if the frame is not empty, process it
-				if (! frame.empty()) {
+				if (tmpRes && ! frame.empty()) {
 					if (cameraToGray) {
 						Imgproc.cvtColor(frame, frame, Imgproc.COLOR_BGR2GRAY)
 					}
@@ -389,7 +403,6 @@ open class FxController {
 				)
 
 				// update UI
-				conConnectBtn.text = "Disconnect"
 				uiProps.statusMsg.set("Connected")
 			} else {
 				System.err.println("Could not open server connection...")
@@ -399,7 +412,6 @@ open class FxController {
 			// the camera is not active at this point
 			uiProps.connectionOpen.value = false
 			// update UI
-			conConnectBtn.text = "Connect"
 			uiProps.statusMsg.set("Disconnected")
 
 			// stop the timer
