@@ -51,6 +51,7 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 			uiProps!!.statusMsg.set("Error reading status from server")
 		} else {
 			if (isForTimer) {
+				uiProps!!.serverAppVersion.value = resultStat.version
 				uiProps!!.statusMsg.value = "Connected [${
 						resultStat.cpuTemperature?.toDouble()?.format(2)
 					} °C, FPS ${resultStat.framerate}]"

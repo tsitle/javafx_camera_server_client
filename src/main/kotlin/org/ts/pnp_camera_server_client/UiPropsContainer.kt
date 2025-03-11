@@ -5,6 +5,7 @@ import javafx.beans.property.*
 class UiPropsContainer {
 	val connectionOpen: BooleanProperty = SimpleBooleanProperty(false)
 	val clientId: IntegerProperty = SimpleIntegerProperty(0)
+	val serverAppVersion: StringProperty = SimpleStringProperty("n/a")
 	val statusMsg: StringProperty = SimpleStringProperty("-")
 	val ctrlShowGrid: BooleanProperty = SimpleBooleanProperty(false)
 	val ctrlCamAvailLeft: BooleanProperty = SimpleBooleanProperty(false)

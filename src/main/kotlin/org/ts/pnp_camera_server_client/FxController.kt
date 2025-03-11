@@ -143,6 +143,9 @@ open class FxController {
 			}
 
 		//
+		uiProps.serverAppVersion.subscribe { it -> println("Server app version: $it")}
+
+		//
 		uiProps.ctrlCamAvailLeft.subscribe { _ -> handleUiPropChangeForCtrlCamButtons() }
 		uiProps.ctrlCamAvailBoth.subscribe { _ -> handleUiPropChangeForCtrlCamButtons() }
 		uiProps.ctrlCamAvailRight.subscribe { _ -> handleUiPropChangeForCtrlCamButtons() }
