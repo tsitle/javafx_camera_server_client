@@ -21,14 +21,14 @@
 
 <BorderPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.ts.pnp_camera_server_client.FxController">
    <center>
-      <AnchorPane fx:id="imageAnchorPane" prefHeight="482.0" prefWidth="800.0" style="-fx-background-color: yellow;" BorderPane.alignment="CENTER">
+      <AnchorPane fx:id="imageAnchorPane" prefHeight="482.0" style="-fx-background-color: yellow;" BorderPane.alignment="CENTER">
          <children>
             <ImageView fx:id="currentFrame" />
          </children>
       </AnchorPane>
    </center>
    <bottom>
-      <AnchorPane fx:id="bottomAnchorPane" prefHeight="209.0" prefWidth="800.0" BorderPane.alignment="CENTER">
+      <AnchorPane fx:id="bottomAnchorPane" prefHeight="185.0" BorderPane.alignment="CENTER">
          <children>
             <BorderPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                <bottom>
@@ -39,7 +39,7 @@
                   </AnchorPane>
                </bottom>
                <center>
-                  <TabPane fx:id="mainTabPane" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: blue;" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+                  <TabPane fx:id="mainTabPane" style="-fx-background-color: blue;" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
                     <tabs>
                       <Tab text="Connection">
                         <content>
@@ -228,6 +228,18 @@
                                                 <Insets bottom="15.0" />
                                              </padding>
                                           </HBox>
+                                       </children>
+                                    </VBox>
+                                 </children>
+                              </AnchorPane>
+                        </content>
+                      </Tab>
+                        <Tab text="Brightness &amp; Contrast">
+                          <content>
+                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                 <children>
+                                    <VBox prefHeight="200.0" prefWidth="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                       <children>
                                           <HBox alignment="TOP_CENTER" prefHeight="100.0" prefWidth="200.0">
                                              <children>
                                                 <Label text="Brightness" textFill="WHITE">
@@ -235,15 +247,18 @@
                                                       <Insets right="15.0" />
                                                    </HBox.margin>
                                                 </Label>
-                                                <Slider fx:id="ctrlBrightnSlid" onKeyReleased="#evtCtrlBrightnSlidKeyRel" onMouseClicked="#evtCtrlBrightnSlidMouseClicked" onMouseDragged="#evtCtrlBrightnSlidMouseDragged" prefWidth="245.0" showTickMarks="true" snapToTicks="true" />
+                                                <Slider fx:id="bncBrightnSlid" onKeyReleased="#evtBncBrightnSlidKeyRel" onMouseClicked="#evtBncBrightnSlidMouseClicked" onMouseDragged="#evtBncBrightnSlidMouseDragged" prefWidth="245.0" showTickMarks="true" snapToTicks="true" />
                                              </children>
                                           </HBox>
                                        </children>
+                                       <padding>
+                                          <Insets top="15.0" />
+                                       </padding>
                                     </VBox>
                                  </children>
                               </AnchorPane>
-                        </content>
-                      </Tab>
+                          </content>
+                        </Tab>
                     </tabs>
                   </TabPane>
                </center>

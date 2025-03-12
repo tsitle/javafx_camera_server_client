@@ -81,10 +81,10 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 				uiProps!!.ctrlZoomLevel.value = resultStat.procRoi?.sizePerc ?: -1
 				uiProps!!.ctrlZoomAllowed.value = resultStat.enabledProc?.scale ?: false
 				//
-				uiProps!!.ctrlBrightnVal.value = resultStat.procBnc?.brightness?.`val` ?: 0
-				uiProps!!.ctrlBrightnMin.value = resultStat.procBnc?.brightness?.min ?: 0
-				uiProps!!.ctrlBrightnMax.value = resultStat.procBnc?.brightness?.max ?: 0
-				uiProps!!.ctrlBrightnAllowed.value = resultStat.procBnc?.brightness?.supported ?: false
+				uiProps!!.bncBrightnVal.value = resultStat.procBnc?.brightness?.`val` ?: 0
+				uiProps!!.bncBrightnMin.value = resultStat.procBnc?.brightness?.min ?: 0
+				uiProps!!.bncBrightnMax.value = resultStat.procBnc?.brightness?.max ?: 0
+				uiProps!!.bncBrightnAllowed.value = resultStat.procBnc?.brightness?.supported ?: false
 			}
 			return resultStat
 		}

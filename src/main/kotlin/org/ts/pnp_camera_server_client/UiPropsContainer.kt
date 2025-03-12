@@ -7,6 +7,7 @@ class UiPropsContainer {
 	val clientId: IntegerProperty = SimpleIntegerProperty(0)
 	val serverAppVersion: StringProperty = SimpleStringProperty("n/a")
 	val statusMsg: StringProperty = SimpleStringProperty("-")
+	//
 	val ctrlShowGrid: BooleanProperty = SimpleBooleanProperty(false)
 	val ctrlCamAvailLeft: BooleanProperty = SimpleBooleanProperty(false)
 	val ctrlCamAvailBoth: BooleanProperty = SimpleBooleanProperty(false)
@@ -14,8 +15,9 @@ class UiPropsContainer {
 	val ctrlCamActive: IntegerProperty = SimpleIntegerProperty(0)
 	val ctrlZoomLevel: IntegerProperty = SimpleIntegerProperty(0)
 	val ctrlZoomAllowed: BooleanProperty = SimpleBooleanProperty(false)
-	val ctrlBrightnVal: IntegerProperty = SimpleIntegerProperty(0)
-	val ctrlBrightnMin: IntegerProperty = SimpleIntegerProperty(0)
-	val ctrlBrightnMax: IntegerProperty = SimpleIntegerProperty(0)
-	val ctrlBrightnAllowed: BooleanProperty = SimpleBooleanProperty(false)
+	//
+	val bncBrightnVal: IntegerProperty = SimpleIntegerProperty(0)
+	val bncBrightnMin: IntegerProperty = SimpleIntegerProperty(0)
+	val bncBrightnMax: IntegerProperty = SimpleIntegerProperty(0)
+	val bncBrightnAllowed: BooleanProperty = SimpleBooleanProperty(false)
 }

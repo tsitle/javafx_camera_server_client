@@ -57,7 +57,7 @@ open class FxController {
 	@FXML
 	private lateinit var ctrlZoom100Btn: Button
 	@FXML
-	private lateinit var ctrlBrightnSlid: Slider
+	private lateinit var bncBrightnSlid: Slider
 
 	// a timer for acquiring the video stream
 	private var timerFrames: ScheduledExecutorService? = null
@@ -89,7 +89,7 @@ open class FxController {
 	// has the server connection been lost?
 	private var connectionLost = false
 
-	// last value of Slider "Controls: Brightness"
+	// last value of Slider "B&C: Brightness"
 	private var lastCtrlBrightnVal = 0
 
 	/**
@@ -152,7 +152,7 @@ open class FxController {
 
 				handleUiPropChangeForCtrlZoomButtons()
 
-				ctrlBrightnSlid.isDisable = ! it
+				bncBrightnSlid.isDisable = ! it
 			}
 
 		//
@@ -169,10 +169,10 @@ open class FxController {
 		uiProps.ctrlZoomAllowed.subscribe { _ -> handleUiPropChangeForCtrlZoomButtons() }
 
 		//
-		uiProps.ctrlBrightnVal.subscribe { _ -> handleUiPropChangeForCtrlBrightn() }
-		uiProps.ctrlBrightnMin.subscribe { _ -> handleUiPropChangeForCtrlBrightn() }
-		uiProps.ctrlBrightnMax.subscribe { _ -> handleUiPropChangeForCtrlBrightn() }
-		uiProps.ctrlBrightnAllowed.subscribe { _ -> handleUiPropChangeForCtrlBrightn() }
+		uiProps.bncBrightnVal.subscribe { _ -> handleUiPropChangeForBncBrightn() }
+		uiProps.bncBrightnMin.subscribe { _ -> handleUiPropChangeForBncBrightn() }
+		uiProps.bncBrightnMax.subscribe { _ -> handleUiPropChangeForBncBrightn() }
+		uiProps.bncBrightnAllowed.subscribe { _ -> handleUiPropChangeForBncBrightn() }
 	}
 
 	/**
@@ -237,18 +237,18 @@ open class FxController {
 	}
 
 	/**
-	 * Handle changes in uiProps for slider "Controls: Brightness"
+	 * Handle changes in uiProps for slider "B&C: Brightness"
 	 */
-	private fun handleUiPropChangeForCtrlBrightn() {
+	private fun handleUiPropChangeForBncBrightn() {
 		val tmpConnOpen = uiProps.connectionOpen.value
-		val tmpCtrlBrightnAllowed = uiProps.ctrlBrightnAllowed.value
-		val canBeEnabled = (tmpConnOpen && tmpCtrlBrightnAllowed)
-		ctrlBrightnSlid.isDisable = ! canBeEnabled
+		val tmpBrightnAllowed = uiProps.bncBrightnAllowed.value
+		val canBeEnabled = (tmpConnOpen && tmpBrightnAllowed)
+		bncBrightnSlid.isDisable = ! canBeEnabled
 
-		ctrlBrightnSlid.min = uiProps.ctrlBrightnMin.value.toDouble()
-		ctrlBrightnSlid.max = uiProps.ctrlBrightnMax.value.toDouble()
-		ctrlBrightnSlid.value = uiProps.ctrlBrightnVal.value.toDouble()
-		lastCtrlBrightnVal = uiProps.ctrlBrightnVal.value
+		bncBrightnSlid.min = uiProps.bncBrightnMin.value.toDouble()
+		bncBrightnSlid.max = uiProps.bncBrightnMax.value.toDouble()
+		bncBrightnSlid.value = uiProps.bncBrightnVal.value.toDouble()
+		lastCtrlBrightnVal = uiProps.bncBrightnVal.value
 	}
 
 	/**
@@ -570,40 +570,40 @@ open class FxController {
 	}
 
 	/**
-	 * Event: Slider "Controls: Brightness" mouse dragged
+	 * Event: Slider "B&C: Brightness" mouse dragged
 	 *
 	 * @param event
 	 */
 	@FXML
-	protected fun evtCtrlBrightnSlidMouseDragged(event: MouseEvent?) {
-		ctrlBrightnSlidValueChanged()
+	protected fun evtBncBrightnSlidMouseDragged(event: MouseEvent?) {
+		bncBrightnSlidValueChanged()
 	}
 
 	/**
-	 * Event: Slider "Controls: Brightness" mouse clicked
+	 * Event: Slider "B&C: Brightness" mouse clicked
 	 *
 	 * @param event
 	 */
 	@FXML
-	protected fun evtCtrlBrightnSlidMouseClicked(event: MouseEvent?) {
-		ctrlBrightnSlidValueChanged()
+	protected fun evtBncBrightnSlidMouseClicked(event: MouseEvent?) {
+		bncBrightnSlidValueChanged()
 	}
 
 	/**
-	 * Event: Slider "Controls: Brightness" key released
+	 * Event: Slider "B&C: Brightness" key released
 	 *
 	 * @param event
 	 */
 	@FXML
-	protected fun evtCtrlBrightnSlidKeyRel(event: KeyEvent?) {
-		ctrlBrightnSlidValueChanged()
+	protected fun evtBncBrightnSlidKeyRel(event: KeyEvent?) {
+		bncBrightnSlidValueChanged()
 	}
 
 	/**
-	 * Handle value change of Slider "Controls: Brightness"
+	 * Handle value change of Slider "B&C: Brightness"
 	 */
-	private fun ctrlBrightnSlidValueChanged() {
-		val newVal = round(ctrlBrightnSlid.value).toInt()
+	private fun bncBrightnSlidValueChanged() {
+		val newVal = round(bncBrightnSlid.value).toInt()
 		if (newVal == lastCtrlBrightnVal) {
 			return
 		}
