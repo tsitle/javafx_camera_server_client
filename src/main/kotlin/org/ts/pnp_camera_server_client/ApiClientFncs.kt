@@ -51,11 +51,15 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 			uiProps!!.statusMsg.set("Error reading status from server")
 		} else {
 			if (isForTimer) {
+				val tmpProcRoiEn = resultStat.enabledProc?.roi ?: false
+				val tmpProcRoiSz = resultStat.procRoi?.sizePerc ?: -1
+				val tmpZoomStr = (if (tmpProcRoiEn) ", Zoom ${(1.0 + (1.0 - (tmpProcRoiSz.toDouble() / 100.0))).format(1)}x" else "")
+
 				uiProps!!.serverAppVersion.value = resultStat.version
 				//
 				uiProps!!.statusMsg.value = "Connected [${
 						resultStat.cpuTemperature?.toDouble()?.format(2)
-					} °C, FPS ${resultStat.framerate}]"
+					} °C, FPS ${resultStat.framerate}${tmpZoomStr}]"
 				//
 				uiProps!!.ctrlShowGrid.value = resultStat.procGrid?.show ?: false
 				//
@@ -78,8 +82,8 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 				}
 				uiProps!!.ctrlCamActive.value = resultStat.outputCams?.ordinal ?: -1
 				//
-				uiProps!!.ctrlZoomLevel.value = resultStat.procRoi?.sizePerc ?: -1
-				uiProps!!.ctrlZoomAllowed.value = resultStat.enabledProc?.scale ?: false
+				uiProps!!.ctrlZoomLevel.value = tmpProcRoiSz
+				uiProps!!.ctrlZoomAllowed.value = (tmpProcRoiEn && (resultStat.enabledProc?.scale ?: false))
 				//
 				uiProps!!.bncBrightnVal.value = resultStat.procBnc?.brightness?.`val` ?: 0
 				uiProps!!.bncBrightnMin.value = resultStat.procBnc?.brightness?.min ?: 0
