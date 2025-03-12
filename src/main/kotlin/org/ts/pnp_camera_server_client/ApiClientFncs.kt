@@ -52,10 +52,13 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 		} else {
 			if (isForTimer) {
 				uiProps!!.serverAppVersion.value = resultStat.version
+				//
 				uiProps!!.statusMsg.value = "Connected [${
 						resultStat.cpuTemperature?.toDouble()?.format(2)
 					} °C, FPS ${resultStat.framerate}]"
+				//
 				uiProps!!.ctrlShowGrid.value = resultStat.procGrid?.show ?: false
+				//
 				when (resultStat.availOutputCams) {
 					StatusCams.L -> {
 						uiProps!!.ctrlCamAvailLeft.value = true
@@ -74,8 +77,14 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 					}
 				}
 				uiProps!!.ctrlCamActive.value = resultStat.outputCams?.ordinal ?: -1
+				//
 				uiProps!!.ctrlZoomLevel.value = resultStat.procRoi?.sizePerc ?: -1
 				uiProps!!.ctrlZoomAllowed.value = resultStat.enabledProc?.scale ?: false
+				//
+				uiProps!!.ctrlBrightnVal.value = resultStat.procBnc?.brightness?.`val` ?: 0
+				uiProps!!.ctrlBrightnMin.value = resultStat.procBnc?.brightness?.min ?: 0
+				uiProps!!.ctrlBrightnMax.value = resultStat.procBnc?.brightness?.max ?: 0
+				uiProps!!.ctrlBrightnAllowed.value = resultStat.procBnc?.brightness?.supported ?: false
 			}
 			return resultStat
 		}
@@ -163,22 +172,45 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 	/**
 	 * Set zoom level
 	 *
-	 * @param zoomPerc Zoom level in percent
+	 * @param valuePerc Zoom level in percent
 	 */
-	fun setZoom(zoomPerc: Int) {
+	fun setZoom(valuePerc: Int) {
 		val resultStat : Status = getServerStatus(false) ?: return
 
 		try {
 			if (resultStat.result != Status.Result.success) {
 				uiProps!!.statusMsg.set("Error reading status from server")
 			} else {
-				val resultPost : Status = apiInstance!!.procRoiSize(zoomPerc)
+				val resultPost : Status = apiInstance!!.procRoiSize(valuePerc)
 				if (resultPost.result != Status.Result.success) {
 					uiProps!!.statusMsg.set("Could not set zoom level")
 				}
 			}
 		} catch (e: Exception) {
 			uiProps!!.statusMsg.set("Exception calling DefaultApi#procRoiSize: ${e.message}")
+			//e.printStackTrace()
+		}
+	}
+
+	/**
+	 * Set brightness
+	 *
+	 * @param valuePerc Brightness in percent
+	 */
+	fun setBrightness(valuePerc: Int) {
+		val resultStat : Status = getServerStatus(false) ?: return
+
+		try {
+			if (resultStat.result != Status.Result.success) {
+				uiProps!!.statusMsg.set("Error reading status from server")
+			} else {
+				val resultPost : Status = apiInstance!!.procBncBrightness(valuePerc)
+				if (resultPost.result != Status.Result.success) {
+					uiProps!!.statusMsg.set("Could not set brightness")
+				}
+			}
+		} catch (e: Exception) {
+			uiProps!!.statusMsg.set("Exception calling DefaultApi#procBncBrightness: ${e.message}")
 			//e.printStackTrace()
 		}
 	}

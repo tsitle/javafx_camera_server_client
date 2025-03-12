@@ -6,6 +6,8 @@ import javafx.fxml.FXML
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
+import javafx.scene.input.KeyEvent
+import javafx.scene.input.MouseEvent
 import javafx.scene.layout.AnchorPane
 import org.openapitools.client.apis.DefaultApi
 import org.openapitools.client.models.StatusCams
@@ -54,6 +56,8 @@ open class FxController {
 	private lateinit var ctrlZoomMinusBtn: Button
 	@FXML
 	private lateinit var ctrlZoom100Btn: Button
+	@FXML
+	private lateinit var ctrlBrightnSlid: Slider
 
 	// a timer for acquiring the video stream
 	private var timerFrames: ScheduledExecutorService? = null
@@ -84,6 +88,9 @@ open class FxController {
 
 	// has the server connection been lost?
 	private var connectionLost = false
+
+	// last value of Slider "Controls: Brightness"
+	private var lastCtrlBrightnVal = 0
 
 	/**
 	 * Initialize UI controller
@@ -141,9 +148,11 @@ open class FxController {
 
 				handleUiPropChangeForCtrlCamButtons()
 
+				ctrlShowGridCbx.isDisable = ! it
+
 				handleUiPropChangeForCtrlZoomButtons()
 
-				ctrlShowGridCbx.isDisable = ! it
+				ctrlBrightnSlid.isDisable = ! it
 			}
 
 		//
@@ -158,6 +167,12 @@ open class FxController {
 		//
 		uiProps.ctrlZoomLevel.subscribe { _ -> handleUiPropChangeForCtrlZoomButtons() }
 		uiProps.ctrlZoomAllowed.subscribe { _ -> handleUiPropChangeForCtrlZoomButtons() }
+
+		//
+		uiProps.ctrlBrightnVal.subscribe { _ -> handleUiPropChangeForCtrlBrightn() }
+		uiProps.ctrlBrightnMin.subscribe { _ -> handleUiPropChangeForCtrlBrightn() }
+		uiProps.ctrlBrightnMax.subscribe { _ -> handleUiPropChangeForCtrlBrightn() }
+		uiProps.ctrlBrightnAllowed.subscribe { _ -> handleUiPropChangeForCtrlBrightn() }
 	}
 
 	/**
@@ -219,6 +234,21 @@ open class FxController {
 		setTooltipOfButton(ctrlZoomPlusBtn, if (ctrlZoomPlusBtn.isDisable) "Zoom not possible" else "Zoom in")
 		setTooltipOfButton(ctrlZoomMinusBtn, if (ctrlZoomMinusBtn.isDisable) "Zoom not possible" else "Zoom out")
 		setTooltipOfButton(ctrlZoom100Btn, if (ctrlZoom100Btn.isDisable) "Zoom not possible" else "Reset zoom to 100%")
+	}
+
+	/**
+	 * Handle changes in uiProps for slider "Controls: Brightness"
+	 */
+	private fun handleUiPropChangeForCtrlBrightn() {
+		val tmpConnOpen = uiProps.connectionOpen.value
+		val tmpCtrlBrightnAllowed = uiProps.ctrlBrightnAllowed.value
+		val canBeEnabled = (tmpConnOpen && tmpCtrlBrightnAllowed)
+		ctrlBrightnSlid.isDisable = ! canBeEnabled
+
+		ctrlBrightnSlid.min = uiProps.ctrlBrightnMin.value.toDouble()
+		ctrlBrightnSlid.max = uiProps.ctrlBrightnMax.value.toDouble()
+		ctrlBrightnSlid.value = uiProps.ctrlBrightnVal.value.toDouble()
+		lastCtrlBrightnVal = uiProps.ctrlBrightnVal.value
 	}
 
 	/**
@@ -537,5 +567,48 @@ open class FxController {
 		apiClientFncs?.setZoom(nextZoomLevel)
 		//
 		moveFocusAwayFromControls()
+	}
+
+	/**
+	 * Event: Slider "Controls: Brightness" mouse dragged
+	 *
+	 * @param event
+	 */
+	@FXML
+	protected fun evtCtrlBrightnSlidMouseDragged(event: MouseEvent?) {
+		ctrlBrightnSlidValueChanged()
+	}
+
+	/**
+	 * Event: Slider "Controls: Brightness" mouse clicked
+	 *
+	 * @param event
+	 */
+	@FXML
+	protected fun evtCtrlBrightnSlidMouseClicked(event: MouseEvent?) {
+		ctrlBrightnSlidValueChanged()
+	}
+
+	/**
+	 * Event: Slider "Controls: Brightness" key released
+	 *
+	 * @param event
+	 */
+	@FXML
+	protected fun evtCtrlBrightnSlidKeyRel(event: KeyEvent?) {
+		ctrlBrightnSlidValueChanged()
+	}
+
+	/**
+	 * Handle value change of Slider "Controls: Brightness"
+	 */
+	private fun ctrlBrightnSlidValueChanged() {
+		val newVal = round(ctrlBrightnSlid.value).toInt()
+		if (newVal == lastCtrlBrightnVal) {
+			return
+		}
+		lastCtrlBrightnVal = newVal
+		//
+		apiClientFncs?.setBrightness(newVal)
 	}
 }

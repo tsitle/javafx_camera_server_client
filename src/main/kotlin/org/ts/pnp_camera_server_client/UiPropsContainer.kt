@@ -14,4 +14,8 @@ class UiPropsContainer {
 	val ctrlCamActive: IntegerProperty = SimpleIntegerProperty(0)
 	val ctrlZoomLevel: IntegerProperty = SimpleIntegerProperty(0)
 	val ctrlZoomAllowed: BooleanProperty = SimpleBooleanProperty(false)
+	val ctrlBrightnVal: IntegerProperty = SimpleIntegerProperty(0)
+	val ctrlBrightnMin: IntegerProperty = SimpleIntegerProperty(0)
+	val ctrlBrightnMax: IntegerProperty = SimpleIntegerProperty(0)
+	val ctrlBrightnAllowed: BooleanProperty = SimpleBooleanProperty(false)
 }
