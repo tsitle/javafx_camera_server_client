@@ -3,10 +3,7 @@ package org.ts.pnp_camera_server_client
 import javafx.application.Platform
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
-import javafx.scene.control.Button
-import javafx.scene.control.CheckBox
-import javafx.scene.control.Label
-import javafx.scene.control.TextField
+import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.AnchorPane
@@ -131,6 +128,7 @@ open class FxController {
 				conConnectBtn.styleClass.removeAll("btn-danger", "btn-default", "btn-success")
 				conConnectBtn.styleClass.add(if (it) "btn-danger" else "btn-success")
 				conConnectBtn.text = (if (it) "Disconnect" else "Connect")
+				setTooltipOfButton(conConnectBtn, if (it) "Disconnect from server" else "Connect to server")
 
 				serverUrlTxtfld.isDisable = it
 				serverApiKeyTxtfld.isDisable = it
@@ -162,6 +160,16 @@ open class FxController {
 		ctrlCamLeftBtn.isDisable = ! (tmpConnOpen && uiProps.ctrlCamAvailLeft.value && tmpCtrlCamActive != StatusCams.L.ordinal)
 		ctrlCamBothBtn.isDisable = ! (tmpConnOpen && uiProps.ctrlCamAvailBoth.value && tmpCtrlCamActive != StatusCams.BOTH.ordinal)
 		ctrlCamRightBtn.isDisable = ! (tmpConnOpen && uiProps.ctrlCamAvailRight.value && tmpCtrlCamActive != StatusCams.R.ordinal)
+
+		if (tmpConnOpen) {
+			setTooltipOfButton(ctrlCamLeftBtn, if (tmpCtrlCamActive != StatusCams.L.ordinal) "Activate left camera" else "Left camera active")
+			setTooltipOfButton(ctrlCamBothBtn, if (tmpCtrlCamActive != StatusCams.BOTH.ordinal) "Activate both cameras" else "Both cameras active")
+			setTooltipOfButton(ctrlCamRightBtn, if (tmpCtrlCamActive != StatusCams.R.ordinal) "Activate right camera" else "Right camera active")
+		} else {
+			for (btn in arrayOf(ctrlCamLeftBtn, ctrlCamBothBtn, ctrlCamRightBtn)) {
+				setTooltipOfButton(btn, "Cannot activate camera(s)")
+			}
+		}
 
 		val cssClassActive = "btn-primary"
 		val cssClassInactive = "btn-default"
@@ -195,6 +203,17 @@ open class FxController {
 		ctrlZoomPlusBtn.isDisable = ! (canBeEnabled && tmpCtrlZoomLev > 10)
 		ctrlZoomMinusBtn.isDisable = ! (canBeEnabled && tmpCtrlZoomLev < 100)
 		ctrlZoom100Btn.isDisable = ! (canBeEnabled && tmpCtrlZoomLev < 100)
+
+		setTooltipOfButton(ctrlZoomPlusBtn, if (ctrlZoomPlusBtn.isDisable) "Zoom not possible" else "Zoom in")
+		setTooltipOfButton(ctrlZoomMinusBtn, if (ctrlZoomMinusBtn.isDisable) "Zoom not possible" else "Zoom out")
+		setTooltipOfButton(ctrlZoom100Btn, if (ctrlZoom100Btn.isDisable) "Zoom not possible" else "Reset zoom to 100%")
+	}
+
+	private fun setTooltipOfButton(btn: Button, text: String) {
+		btn.tooltip.text = text
+		if (btn.parent != null && btn.parent is Label) {
+			(btn.parent as Label).tooltip.text = btn.tooltip.text
+		}
 	}
 
 	private fun runnerGetServerStatusThread() = Runnable {

@@ -8,6 +8,7 @@
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
@@ -45,11 +46,22 @@
                                  <children>
                                     <VBox alignment="TOP_CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                        <children>
-                                          <Button fx:id="conConnectBtn" alignment="center" onAction="#evtConConnect" text="Connect">
-                                             <styleClass>
-                                                <String fx:value="btn" />
-                                                <String fx:value="btn-default" />
-                                             </styleClass></Button>
+                                          <Label>
+                                             <tooltip>
+                                                <Tooltip text="-" />
+                                             </tooltip>
+                                             <graphic>
+                                                <Button fx:id="conConnectBtn" alignment="center" onAction="#evtConConnect" text="Connect">
+                                                   <styleClass>
+                                                      <String fx:value="btn" />
+                                                      <String fx:value="btn-default" />
+                                                   </styleClass>
+                                                   <tooltip>
+                                                      <Tooltip text="-" />
+                                                   </tooltip>
+                                                </Button>
+                                             </graphic>
+                                          </Label>
                                           <GridPane>
                                             <columnConstraints>
                                               <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -97,25 +109,57 @@
                                        <children>
                                           <HBox alignment="TOP_CENTER">
                                              <children>
-                                                 <Button fx:id="ctrlCamLeftBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlCamLeft" text="CAM L">
-                                                     <styleClass>
-                                                         <String fx:value="btn" />
-                                                         <String fx:value="btn-default" />
-                                                     </styleClass></Button>
-                                                <Button fx:id="ctrlCamBothBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlCamBoth" text="CAM BOTH">
-                                                    <styleClass>
-                                                        <String fx:value="btn" />
-                                                        <String fx:value="btn-default" />
-                                                    </styleClass>
+                                                <Label>
+                                                   <graphic>
+                                                       <Button fx:id="ctrlCamLeftBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlCamLeft" text="CAM L">
+                                                           <styleClass>
+                                                               <String fx:value="btn" />
+                                                               <String fx:value="btn-default" />
+                                                           </styleClass>
+                                                         <tooltip>
+                                                            <Tooltip text="-" />
+                                                         </tooltip>
+                                                      </Button>
+                                                   </graphic>
+                                                   <tooltip>
+                                                      <Tooltip text="-" />
+                                                   </tooltip>
+                                                </Label>
+                                                <Label>
+                                                   <graphic>
+                                                      <Button fx:id="ctrlCamBothBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlCamBoth" text="CAM BOTH">
+                                                          <styleClass>
+                                                              <String fx:value="btn" />
+                                                              <String fx:value="btn-default" />
+                                                          </styleClass>
+                                                         <tooltip>
+                                                            <Tooltip text="-" />
+                                                         </tooltip>
+                                                      </Button>
+                                                   </graphic>
+                                                   <tooltip>
+                                                      <Tooltip text="-" />
+                                                   </tooltip>
                                                    <HBox.margin>
                                                       <Insets left="15.0" right="15.0" />
                                                    </HBox.margin>
-                                                </Button>
-                                                 <Button fx:id="ctrlCamRightBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlCamRight" text="CAM R">
-                                                     <styleClass>
-                                                         <String fx:value="btn" />
-                                                         <String fx:value="btn-default" />
-                                                     </styleClass></Button>
+                                                </Label>
+                                                <Label>
+                                                   <graphic>
+                                                       <Button fx:id="ctrlCamRightBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlCamRight" text="CAM R">
+                                                           <styleClass>
+                                                               <String fx:value="btn" />
+                                                               <String fx:value="btn-default" />
+                                                           </styleClass>
+                                                         <tooltip>
+                                                            <Tooltip text="-" />
+                                                         </tooltip>
+                                                      </Button>
+                                                   </graphic>
+                                                   <tooltip>
+                                                      <Tooltip text="-" />
+                                                   </tooltip>
+                                                </Label>
                                              </children>
                                              <VBox.margin>
                                                 <Insets bottom="15.0" />
@@ -127,27 +171,57 @@
                                              </VBox.margin></CheckBox>
                                           <HBox alignment="TOP_CENTER">
                                              <children>
-                                                <Button fx:id="ctrlZoomPlusBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlZoom" text="+">
-                                                   <styleClass>
-                                                      <String fx:value="btn" />
-                                                      <String fx:value="btn-default" />
-                                                   </styleClass>
-                                                </Button>
-                                                <Button fx:id="ctrlZoomMinusBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlZoom" text="-">
-                                                   <styleClass>
-                                                      <String fx:value="btn" />
-                                                      <String fx:value="btn-default" />
-                                                   </styleClass>
+                                                <Label>
+                                                   <tooltip>
+                                                      <Tooltip text="-" />
+                                                   </tooltip>
+                                                   <graphic>
+                                                      <Button fx:id="ctrlZoomPlusBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlZoom" text="+">
+                                                         <styleClass>
+                                                            <String fx:value="btn" />
+                                                            <String fx:value="btn-default" />
+                                                         </styleClass>
+                                                         <tooltip>
+                                                            <Tooltip text="-" />
+                                                         </tooltip>
+                                                      </Button>
+                                                   </graphic>
+                                                </Label>
+                                                <Label>
+                                                   <graphic>
+                                                      <Button fx:id="ctrlZoomMinusBtn" disable="true" mnemonicParsing="false" onAction="#evtCtrlZoom" text="-">
+                                                         <styleClass>
+                                                            <String fx:value="btn" />
+                                                            <String fx:value="btn-default" />
+                                                         </styleClass>
+                                                         <tooltip>
+                                                            <Tooltip text="-" />
+                                                         </tooltip>
+                                                      </Button>
+                                                   </graphic>
+                                                   <tooltip>
+                                                      <Tooltip text="-" />
+                                                   </tooltip>
                                                    <HBox.margin>
                                                       <Insets left="15.0" right="15.0" />
                                                    </HBox.margin>
-                                                </Button>
-                                                <Button fx:id="ctrlZoom100Btn" disable="true" mnemonicParsing="false" onAction="#evtCtrlZoom" text="100%">
-                                                   <styleClass>
-                                                      <String fx:value="btn" />
-                                                      <String fx:value="btn-default" />
-                                                   </styleClass>
-                                                </Button>
+                                                </Label>
+                                                <Label>
+                                                   <graphic>
+                                                      <Button fx:id="ctrlZoom100Btn" disable="true" mnemonicParsing="false" onAction="#evtCtrlZoom" text="100%">
+                                                         <styleClass>
+                                                            <String fx:value="btn" />
+                                                            <String fx:value="btn-default" />
+                                                         </styleClass>
+                                                         <tooltip>
+                                                            <Tooltip text="-" />
+                                                         </tooltip>
+                                                      </Button>
+                                                   </graphic>
+                                                   <tooltip>
+                                                      <Tooltip text="-" />
+                                                   </tooltip>
+                                                </Label>
                                              </children>
                                              <padding>
                                                 <Insets bottom="15.0" />
