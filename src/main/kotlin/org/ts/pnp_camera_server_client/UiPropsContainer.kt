@@ -20,4 +20,9 @@ class UiPropsContainer {
 	val bncBrightnMin: IntegerProperty = SimpleIntegerProperty(0)
 	val bncBrightnMax: IntegerProperty = SimpleIntegerProperty(0)
 	val bncBrightnAllowed: BooleanProperty = SimpleBooleanProperty(false)
+	//
+	val bncContrVal: IntegerProperty = SimpleIntegerProperty(0)
+	val bncContrMin: IntegerProperty = SimpleIntegerProperty(0)
+	val bncContrMax: IntegerProperty = SimpleIntegerProperty(0)
+	val bncContrAllowed: BooleanProperty = SimpleBooleanProperty(false)
 }

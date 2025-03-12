@@ -58,6 +58,8 @@ open class FxController {
 	private lateinit var ctrlZoom100Btn: Button
 	@FXML
 	private lateinit var bncBrightnSlid: Slider
+	@FXML
+	private lateinit var bncContrSlid: Slider
 
 	// a timer for acquiring the video stream
 	private var timerFrames: ScheduledExecutorService? = null
@@ -90,7 +92,10 @@ open class FxController {
 	private var connectionLost = false
 
 	// last value of Slider "B&C: Brightness"
-	private var lastCtrlBrightnVal = 0
+	private var lastBncBrightnVal = 0
+
+	// last value of Slider "B&C: Contrast"
+	private var lastBncContrVal = 0
 
 	/**
 	 * Initialize UI controller
@@ -147,32 +152,37 @@ open class FxController {
 				serverApiKeyTxtfld.isDisable = it
 
 				handleUiPropChangeForCtrlCamButtons()
-
 				ctrlShowGridCbx.isDisable = ! it
-
 				handleUiPropChangeForCtrlZoomButtons()
 
 				bncBrightnSlid.isDisable = ! it
+				bncContrSlid.isDisable = ! it
 			}
 
 		//
 		uiProps.serverAppVersion.subscribe { it -> println("Server app version: $it")}
 
 		//
+		///
 		uiProps.ctrlCamAvailLeft.subscribe { _ -> handleUiPropChangeForCtrlCamButtons() }
 		uiProps.ctrlCamAvailBoth.subscribe { _ -> handleUiPropChangeForCtrlCamButtons() }
 		uiProps.ctrlCamAvailRight.subscribe { _ -> handleUiPropChangeForCtrlCamButtons() }
 		uiProps.ctrlCamActive.subscribe { _ -> handleUiPropChangeForCtrlCamButtons() }
-
-		//
+		///
 		uiProps.ctrlZoomLevel.subscribe { _ -> handleUiPropChangeForCtrlZoomButtons() }
 		uiProps.ctrlZoomAllowed.subscribe { _ -> handleUiPropChangeForCtrlZoomButtons() }
 
 		//
+		///
 		uiProps.bncBrightnVal.subscribe { _ -> handleUiPropChangeForBncBrightn() }
 		uiProps.bncBrightnMin.subscribe { _ -> handleUiPropChangeForBncBrightn() }
 		uiProps.bncBrightnMax.subscribe { _ -> handleUiPropChangeForBncBrightn() }
 		uiProps.bncBrightnAllowed.subscribe { _ -> handleUiPropChangeForBncBrightn() }
+		///
+		uiProps.bncContrVal.subscribe { _ -> handleUiPropChangeForBncContr() }
+		uiProps.bncContrMin.subscribe { _ -> handleUiPropChangeForBncContr() }
+		uiProps.bncContrMax.subscribe { _ -> handleUiPropChangeForBncContr() }
+		uiProps.bncContrAllowed.subscribe { _ -> handleUiPropChangeForBncContr() }
 	}
 
 	/**
@@ -248,7 +258,22 @@ open class FxController {
 		bncBrightnSlid.min = uiProps.bncBrightnMin.value.toDouble()
 		bncBrightnSlid.max = uiProps.bncBrightnMax.value.toDouble()
 		bncBrightnSlid.value = uiProps.bncBrightnVal.value.toDouble()
-		lastCtrlBrightnVal = uiProps.bncBrightnVal.value
+		lastBncBrightnVal = uiProps.bncBrightnVal.value
+	}
+
+	/**
+	 * Handle changes in uiProps for slider "B&C: Contrast"
+	 */
+	private fun handleUiPropChangeForBncContr() {
+		val tmpConnOpen = uiProps.connectionOpen.value
+		val tmpContrAllowed = uiProps.bncContrAllowed.value
+		val canBeEnabled = (tmpConnOpen && tmpContrAllowed)
+		bncContrSlid.isDisable = ! canBeEnabled
+
+		bncContrSlid.min = uiProps.bncContrMin.value.toDouble()
+		bncContrSlid.max = uiProps.bncContrMax.value.toDouble()
+		bncContrSlid.value = uiProps.bncContrVal.value.toDouble()
+		lastBncContrVal = uiProps.bncContrVal.value
 	}
 
 	/**
@@ -604,11 +629,54 @@ open class FxController {
 	 */
 	private fun bncBrightnSlidValueChanged() {
 		val newVal = round(bncBrightnSlid.value).toInt()
-		if (newVal == lastCtrlBrightnVal) {
+		if (newVal == lastBncBrightnVal) {
 			return
 		}
-		lastCtrlBrightnVal = newVal
+		lastBncBrightnVal = newVal
 		//
 		apiClientFncs?.setBrightness(newVal)
+	}
+
+	/**
+	 * Event: Slider "B&C: Contrast" mouse dragged
+	 *
+	 * @param event
+	 */
+	@FXML
+	protected fun evtBncContrSlidMouseDragged(event: MouseEvent?) {
+		bncContrSlidValueChanged()
+	}
+
+	/**
+	 * Event: Slider "B&C: Contrast" mouse clicked
+	 *
+	 * @param event
+	 */
+	@FXML
+	protected fun evtBncContrSlidMouseClicked(event: MouseEvent?) {
+		bncContrSlidValueChanged()
+	}
+
+	/**
+	 * Event: Slider "B&C: Contrast" key released
+	 *
+	 * @param event
+	 */
+	@FXML
+	protected fun evtBncContrSlidKeyRel(event: KeyEvent?) {
+		bncContrSlidValueChanged()
+	}
+
+	/**
+	 * Handle value change of Slider "B&C: Contrast"
+	 */
+	private fun bncContrSlidValueChanged() {
+		val newVal = round(bncContrSlid.value).toInt()
+		if (newVal == lastBncContrVal) {
+			return
+		}
+		lastBncContrVal = newVal
+		//
+		apiClientFncs?.setContrast(newVal)
 	}
 }

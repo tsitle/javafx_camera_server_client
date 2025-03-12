@@ -85,6 +85,11 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 				uiProps!!.bncBrightnMin.value = resultStat.procBnc?.brightness?.min ?: 0
 				uiProps!!.bncBrightnMax.value = resultStat.procBnc?.brightness?.max ?: 0
 				uiProps!!.bncBrightnAllowed.value = resultStat.procBnc?.brightness?.supported ?: false
+				//
+				uiProps!!.bncContrVal.value = resultStat.procBnc?.contrast?.`val` ?: 0
+				uiProps!!.bncContrMin.value = resultStat.procBnc?.contrast?.min ?: 0
+				uiProps!!.bncContrMax.value = resultStat.procBnc?.contrast?.max ?: 0
+				uiProps!!.bncContrAllowed.value = resultStat.procBnc?.contrast?.supported ?: false
 			}
 			return resultStat
 		}
@@ -188,6 +193,23 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 			}
 		} catch (e: Exception) {
 			uiProps!!.statusMsg.set("Exception calling DefaultApi#procBncBrightness: ${e.message}")
+			//e.printStackTrace()
+		}
+	}
+
+	/**
+	 * Set contrast
+	 *
+	 * @param valuePerc Contrast in percent
+	 */
+	fun setContrast(valuePerc: Int) {
+		try {
+			val resultPost : Status = apiInstance!!.procBncContrast(valuePerc)
+			if (resultPost.result != Status.Result.success) {
+				uiProps!!.statusMsg.set("Could not set contrast")
+			}
+		} catch (e: Exception) {
+			uiProps!!.statusMsg.set("Exception calling DefaultApi#procBncContrast: ${e.message}")
 			//e.printStackTrace()
 		}
 	}
