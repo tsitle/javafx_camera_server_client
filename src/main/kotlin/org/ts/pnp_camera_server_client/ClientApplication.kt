@@ -40,11 +40,17 @@ class ClientApplication : Application() {
 
 			// add event handler for window size changes
 			scene.widthProperty().addListener { _, oldSceneWidth, newSceneWidth ->
-					//println("window width changed: $oldSceneWidth -> $newSceneWidth")
+					if (oldSceneWidth.toInt() < 0) {
+						println("dummy output to stop IDE from complaining about unused var")
+					}
+					//println("window width changed: $oldSceneWidth -> $newSceneWidth (h=${scene.height.toInt()})")
 					controller.updateWindowSize(newSceneWidth.toInt(), scene.height.toInt())
 				}
 			scene.heightProperty().addListener { _, oldSceneHeight, newSceneHeight ->
-					//println("window height changed: $oldSceneHeight -> $newSceneHeight")
+					if (oldSceneHeight.toInt() < 0) {
+						println("dummy output to stop IDE from complaining about unused var")
+					}
+					//println("window height changed: $oldSceneHeight -> $newSceneHeight (w=${scene.width.toInt()})")
 					controller.updateWindowSize(scene.width.toInt(), newSceneHeight.toInt())
 				}
 

@@ -9,6 +9,7 @@ import javafx.scene.image.ImageView
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.AnchorPane
+import javafx.scene.layout.BorderPane
 import org.openapitools.client.apis.DefaultApi
 import org.openapitools.client.models.StatusCams
 import org.opencv.core.Core
@@ -25,6 +26,8 @@ import kotlin.random.Random
 
 
 fun Double.format(digits: Int) = "%.${digits}f".format(this)
+
+data class AreaSize(val w: Int, val h: Int)
 
 
 open class FxController {
@@ -433,28 +436,41 @@ open class FxController {
 			return
 		}
 
+		/**
+		 * When entering/exiting fullscreen mode on macOS the size of the imageAnchorPane
+		 * doesn't properly update for some reason. Probably because of a race condition.
+		 * Using its parent BorderPane here instead.
+		 */
+		if (imageAnchorPane.parent !is BorderPane) {
+			System.err.println("parent of #imageAnchorPane needs to be BorderPane. Is '${imageAnchorPane.parent.typeSelector}'")
+			return
+		}
+		val tmpBp = imageAnchorPane.parent as BorderPane
+		val areaForImage = AreaSize(w = tmpBp.width.toInt(), h = (tmpBp.height - bottomAnchorPane.height).toInt())
 		if ((newWidth.toDouble() / cameraRatio) + bottomAnchorPane.height > newHeight) {
 			//println("updateWindowSize: case 1 - window wider than image")
-			currentFrame.fitHeight = imageAnchorPane.height
-			currentFrame.fitWidth = imageAnchorPane.height * cameraRatio
+			currentFrame.fitHeight = areaForImage.h.toDouble()
+			currentFrame.fitWidth = round(areaForImage.h * cameraRatio)
 
-			if (imageAnchorPane.height + bottomAnchorPane.height > newHeight) {
+			if (areaForImage.h + bottomAnchorPane.height > newHeight) {
 				// if the image is now too high we need to make it narrower again
-				currentFrame.fitHeight = newHeight.toDouble() - bottomAnchorPane.height
-				currentFrame.fitWidth = currentFrame.fitHeight * cameraRatio
+				currentFrame.fitHeight = round(newHeight.toDouble() - bottomAnchorPane.height)
+				currentFrame.fitWidth = round(currentFrame.fitHeight * cameraRatio)
 			}
 			//
-			currentFrame.x = (imageAnchorPane.width - currentFrame.fitWidth) / 2.0
+			currentFrame.x = round((areaForImage.w - currentFrame.fitWidth) / 2.0)
 			currentFrame.y = 0.0
 		} else {
 			//println("updateWindowSize: case 2 - window higher than image")
 			currentFrame.fitWidth = newWidth.toDouble()
-			currentFrame.fitHeight = newWidth.toDouble() / cameraRatio
+			currentFrame.fitHeight = round(newWidth.toDouble() / cameraRatio)
 			//
 			currentFrame.x = 0.0
-			currentFrame.y = (imageAnchorPane.height - currentFrame.fitHeight) / 2.0
+			currentFrame.y = round((areaForImage.h - currentFrame.fitHeight) / 2.0)
 		}
-		//println("updateWindowSize: img ${currentFrame.fitWidth}x${currentFrame.fitHeight} (anchor.w: ${imageAnchorPane.width.toInt()}) (bot.h: ${bottomAnchorPane.height.toInt()})")
+		//println("updateWindowSize: img ${currentFrame.fitWidth}x${currentFrame.fitHeight}")
+		//println("updateWindowSize:     bot.h: ${bottomAnchorPane.height.toInt()}")
+		//println("updateWindowSize:     afi ${areaForImage.w}x${areaForImage.h}")
 	}
 
 	/**
