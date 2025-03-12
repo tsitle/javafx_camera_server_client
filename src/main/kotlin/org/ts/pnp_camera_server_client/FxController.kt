@@ -85,6 +85,9 @@ open class FxController {
 	// has the server connection been lost?
 	private var connectionLost = false
 
+	/**
+	 * Initialize UI controller
+	 */
 	@FXML
 	protected fun initialize() {
 		// load the native OpenCV library
@@ -109,6 +112,9 @@ open class FxController {
 		}
 	}
 
+	/**
+	 * Initialize uiProps handling
+	 */
 	private fun initUiPropHandling() {
 		uiProps.clientId.subscribe { it -> println("Client ID: ${it.toInt()}") }
 		uiProps.clientId.value = (Random.nextDouble() * 1000.0).toInt()
@@ -154,6 +160,9 @@ open class FxController {
 		uiProps.ctrlZoomAllowed.subscribe { _ -> handleUiPropChangeForCtrlZoomButtons() }
 	}
 
+	/**
+	 * Handle changes in uiProps for buttons "Controls: CAM x"
+	 */
 	private fun handleUiPropChangeForCtrlCamButtons() {
 		val tmpConnOpen = uiProps.connectionOpen.value
 		val tmpCtrlCamActive = uiProps.ctrlCamActive.value
@@ -195,6 +204,9 @@ open class FxController {
 		}
 	}
 
+	/**
+	 * Handle changes in uiProps for buttons "Controls: Zoom x"
+	 */
 	private fun handleUiPropChangeForCtrlZoomButtons() {
 		val tmpConnOpen = uiProps.connectionOpen.value
 		val tmpCtrlZoomLev = uiProps.ctrlZoomLevel.value
@@ -209,6 +221,9 @@ open class FxController {
 		setTooltipOfButton(ctrlZoom100Btn, if (ctrlZoom100Btn.isDisable) "Zoom not possible" else "Reset zoom to 100%")
 	}
 
+	/**
+	 * Set value of tooltip of button (and its parent label)
+	 */
 	private fun setTooltipOfButton(btn: Button, text: String) {
 		btn.tooltip.text = text
 		if (btn.parent != null && btn.parent is Label) {
@@ -216,6 +231,9 @@ open class FxController {
 		}
 	}
 
+	/**
+	 * Runner for "Get server status" thread
+	 */
 	private fun runnerGetServerStatusThread() = Runnable {
 		var readStatusTo = 0
 		while (! doKillThreadStatus) {
@@ -233,6 +251,9 @@ open class FxController {
 		println("ending threadStatus")
 	}
 
+	/**
+	 * Sub-Runner for "Get server status" thread - does the actual polling of the server's status
+	 */
 	private fun runnerGetServerStatusSub() = Runnable {
 		if (connectionLost) {
 			uiProps.connectionOpen.value = false
@@ -337,12 +358,18 @@ open class FxController {
 		this.doKillThreadStatus = true
 	}
 
+	/**
+	 * Initialize the window size related properties
+	 */
 	fun initWindowSize() {
 		//println("externalInitWindowSize: anchor ${imageAnchorPane.width.toInt()}x${imageAnchorPane.height.toInt()}")
 		cameraRatio = imageAnchorPane.width / imageAnchorPane.height
 		updateWindowSize(imageAnchorPane.width.toInt(), imageAnchorPane.height.toInt() + bottomAnchorPane.height.toInt())
 	}
 
+	/**
+	 * Update the window size related properties - this allows the camera image view's size to be responsive
+	 */
 	fun updateWindowSize(newWidth: Int, newHeight: Int) {
 		//println("updateWindowSize: wnd ${newWidth}x${newHeight}")
 
