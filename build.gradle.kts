@@ -94,7 +94,7 @@ distributions {
 			throw Error("Cannot build Distribution for ${osName}-${cpuArch}")
 		}
 
-		println("Building Distribution for ${osName}-${cpuArch}")
+		println("Host: ${osName}-${cpuArch}")
 		distributionBaseName = "pnp_camera_server_client-${osName}-${cpuArch}"
 
 		if (OperatingSystem.current().isMacOsX || OperatingSystem.current().isLinux) {
