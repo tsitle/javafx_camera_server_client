@@ -36,11 +36,21 @@ application {
 }
 
 java {
+	/*
+	 * Show auto-detectable JDKs:
+	 *   $ ./gradlew -q javaToolchains
+	 */
+
+	// select e JDK version that is >= as the one that was used to build the OpenCV library with
+	sourceCompatibility = JavaVersion.VERSION_21
 	toolchain {
-		// select same JDK version as was used to build the OpenCV library with
-		languageVersion.set(JavaLanguageVersion.of(21))
-		vendor.set(JvmVendorSpec.BELLSOFT)
+		//languageVersion.set(JavaLanguageVersion.of(21))
+		//vendor.set(JvmVendorSpec.BELLSOFT)
 	}
+}
+
+kotlin {
+	jvmToolchain(21)
 }
 
 javafx {
