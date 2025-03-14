@@ -1,3 +1,5 @@
+import org.gradle.internal.os.OperatingSystem
+
 /*
  * Interesting article on how to write a Gradle build file for
  * modular and non-modular Java projects:
@@ -9,6 +11,7 @@ plugins {
 	id("application")
 	id("org.jetbrains.kotlin.jvm") version "2.1.10"
 	id("org.openjfx.javafxplugin") version "0.1.0"  // see https://github.com/openjfx/javafx-gradle-plugin
+	//id("org.barfuin.gradle.taskinfo") version "2.1.0"  // show Gradle Task Graph by '$ ./gradlew tiTree <TASK_NAME>'
 }
 
 group = "org.ts"
@@ -67,4 +70,47 @@ dependencies {
 	implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
 	implementation(files(openCvJar))
+}
+
+distributions {
+	main {
+		val osName: String = if (OperatingSystem.current().isMacOsX) {
+				"macos"
+			} else if (OperatingSystem.current().isLinux) {
+				"linux"
+			} else if (OperatingSystem.current().isWindows) {
+				"win"
+			} else {
+				throw Error("Operating System not supported")
+			}
+		val cpuArch: String = if (System.getProperty("os.arch") == "x86_64" || System.getProperty("os.arch") == "amd64") {
+				"x64"
+			} else if (System.getProperty("os.arch") == "aarch64") {
+				"aarch64"
+			} else {
+				throw Error("CPU Architecture not supported")
+			}
+		if (osName == "win" && cpuArch != "x64") {
+			throw Error("Cannot build Distribution for ${osName}-${cpuArch}")
+		}
+
+		println("Building Distribution for ${osName}-${cpuArch}")
+		distributionBaseName = "pnp_camera_server_client-${osName}-${cpuArch}"
+
+		if (OperatingSystem.current().isMacOsX || OperatingSystem.current().isLinux) {
+			contents {
+				into("lib_opencv-${osName}-${cpuArch}") {
+					from("build_opencv/4.11.0/build/lib")
+				}
+				from("src/launch_wrappers/launcher-${osName}.sh")
+			}
+		} else if (OperatingSystem.current().isWindows) {
+			contents {
+				into("lib_opencv-${osName}-${cpuArch}") {
+					from("build_opencv/4.11.0/build/lib")
+				}
+				from("src/launch_wrappers/launcher-${osName}.cmd")
+			}
+		}
+	}
 }
