@@ -60,6 +60,24 @@ getOsName >/dev/null || exit 1
 
 LVAR_OSNAME="$(getOsName)"
 
+LVAR_IS_DEBIAN=false
+LVAR_IS_REDHAT=false
+LVAR_LX_PKGMAN=""
+if [ "${LVAR_OSNAME}" = "linux" ]; then
+	command -v apt-get >/dev/null 2>&1 && LVAR_IS_DEBIAN=true
+	if [ "${LVAR_IS_DEBIAN}" = "true" ]; then
+		LVAR_LX_PKGMAN="apt-get"
+	else
+		command -v dnf >/dev/null 2>&1 && LVAR_IS_REDHAT=true
+		if [ "${LVAR_IS_REDHAT}" = "true" ]; then
+			LVAR_LX_PKGMAN="dnf"
+		else
+			echo "${VAR_MYNAME}: Error: Cannot detect Linux variant" >>/dev/stderr
+			exit 1
+		fi
+	fi
+fi
+
 #
 
 if [ ! -f "${LCFG_OPENCV_RELEASE}.tar.gz" ]; then
@@ -69,17 +87,21 @@ fi
 
 case "${LVAR_OSNAME}" in
 	linux)
-		echo "${VAR_MYNAME}: running 'apt-get update'"
-		sudo apt-get update || exit 1
-		echo "${VAR_MYNAME}: running 'apt-get install [...]'"
-		sudo apt-get install -y \
+		echo "${VAR_MYNAME}: running '${LVAR_LX_PKGMAN} update'"
+		sudo ${LVAR_LX_PKGMAN} update || exit 1
+		echo "${VAR_MYNAME}: running '${LVAR_LX_PKGMAN} install [...]'"
+		if [ "${LVAR_IS_DEBIAN}" = "true" ]; then
+			TMP_PACKS="libgnutls28-dev libv4l-dev"
+		else
+			TMP_PACKS="gnutls-devel libv4l-devel"
+		fi
+		sudo ${LVAR_LX_PKGMAN} install -y \
 				g++ \
 				cmake \
 				make \
 				git \
 				pkg-config \
-				libgnutls28-dev \
-				libv4l-dev \
+				${TMP_PACKS} \
 				|| exit 1
 		;;
 	macos)
@@ -107,9 +129,14 @@ if [ "${COMPILE_WITH_GUI}" = "true" ]; then
 
 	case "${LVAR_OSNAME}" in
 		linux)
-			echo "${VAR_MYNAME}: running 'apt-get install [...]'"
-			sudo apt-get install -y \
-					libgtk2.0-dev \
+			echo "${VAR_MYNAME}: running '${LVAR_LX_PKGMAN} install [...]'"
+			if [ "${LVAR_IS_DEBIAN}" = "true" ]; then
+				TMP_PACKS="libgtk2.0-dev"
+			else
+				TMP_PACKS="gtk2-devel"
+			fi
+			sudo ${LVAR_LX_PKGMAN} install -y \
+					${TMP_PACKS} \
 					|| exit 1
 			;;
 		macos)
@@ -123,19 +150,32 @@ if [ "${COMPILE_WITH_FFMPEG}" = "true" ]; then
 
 	case "${LVAR_OSNAME}" in
 		linux)
-			echo "${VAR_MYNAME}: running 'apt-get install [...]'"
+			echo "${VAR_MYNAME}: running '${LVAR_LX_PKGMAN} install [...]'"
 			# libavresample-dev doesn't seem to exist anymore. Replacing it with libswresample-dev
 			# libavresample4 doesn't seem to exist anymore. Replacing it with libswresample4
-			sudo apt-get install -y \
-					libavcodec-dev \
-					libavformat-dev \
-					libavutil-dev \
-					libswscale-dev \
-					libswresample-dev \
-					libswresample4 \
-					libjpeg-dev \
-					libopenjp2-7-dev \
-					libpng-dev \
+			if [ "${LVAR_IS_DEBIAN}" = "true" ]; then
+				TMP_PACKS="libavcodec-dev"
+				TMP_PACKS+=" libavformat-dev"
+				TMP_PACKS+=" libavutil-dev"
+				TMP_PACKS+=" libswscale-dev"
+				TMP_PACKS+=" libswresample-dev"
+				TMP_PACKS+=" libswresample4"
+				TMP_PACKS+=" libjpeg-dev"
+				TMP_PACKS+=" libopenjp2-7-dev"
+				TMP_PACKS+=" libpng-dev"
+			else
+				TMP_PACKS="libavcodec-free-devel"
+				TMP_PACKS+=" libavformat-free-devel"
+				TMP_PACKS+=" libavutil-free-devel"
+				TMP_PACKS+=" libswscale-free-devel"
+				TMP_PACKS+=" libswresample-free-devel"
+				#TMP_PACKS+=" "  # libswresample4 does not exist for Rocky Linux 9.5
+				TMP_PACKS+=" libjpeg-turbo-devel"
+				TMP_PACKS+=" openjpeg2-devel"
+				TMP_PACKS+=" libpng-devel"
+			fi
+			sudo ${LVAR_LX_PKGMAN} install -y \
+					${TMP_PACKS} \
 					|| exit 1
 			;;
 		macos)
@@ -153,25 +193,42 @@ if [ "${COMPILE_WITH_GSTREAMER}" = "true" ]; then
 
 	case "${LVAR_OSNAME}" in
 		linux)
-			echo "${VAR_MYNAME}: running 'apt-get install [...]'"
-			sudo apt-get install -y \
-					libgstreamer1.0-dev \
-					libgstreamer-plugins-base1.0-dev \
-					libgstreamer-plugins-bad1.0-dev \
-					gstreamer1.0-plugins-base \
-					gstreamer1.0-plugins-base-apps \
-					gstreamer1.0-plugins-good \
-					gstreamer1.0-plugins-bad \
-					gstreamer1.0-plugins-ugly \
-					gstreamer1.0-libav \
-					gstreamer1.0-tools \
-					gstreamer1.0-alsa \
-					gstreamer1.0-gl \
-					gstreamer1.0-pulseaudio \
+			echo "${VAR_MYNAME}: running '${LVAR_LX_PKGMAN} install [...]'"
+			if [ "${LVAR_IS_DEBIAN}" = "true" ]; then
+				TMP_PACKS="libgstreamer1.0-dev"
+				TMP_PACKS+=" libgstreamer-plugins-base1.0-dev"
+				TMP_PACKS+=" libgstreamer-plugins-bad1.0-dev"
+				TMP_PACKS+=" gstreamer1.0-plugins-base"
+				TMP_PACKS+=" gstreamer1.0-plugins-base-apps"
+				TMP_PACKS+=" gstreamer1.0-plugins-good"
+				TMP_PACKS+=" gstreamer1.0-plugins-bad"
+				TMP_PACKS+=" gstreamer1.0-plugins-ugly"
+				TMP_PACKS+=" gstreamer1.0-libav"
+				TMP_PACKS+=" gstreamer1.0-tools"
+				TMP_PACKS+=" gstreamer1.0-alsa"
+				TMP_PACKS+=" gstreamer1.0-gl"
+				TMP_PACKS+=" gstreamer1.0-pulseaudio"
+			else
+				TMP_PACKS="gstreamer1-devel"
+				TMP_PACKS+=" gstreamer1-plugins-base-devel"
+				TMP_PACKS+=" gstreamer1-plugins-bad-free-devel"
+				TMP_PACKS+=" gstreamer1-plugins-base"
+				TMP_PACKS+=" gstreamer1-plugins-base-tools"
+				TMP_PACKS+=" gstreamer1-plugins-good"
+				TMP_PACKS+=" gstreamer1-plugins-bad"
+				TMP_PACKS+=" gstreamer1-plugins-ugly"
+				TMP_PACKS+=" gstreamer1-libav"
+				#TMP_PACKS+=" "  # gstreamer1.0-tools does not exist for Rocky Linux 9.5
+				#TMP_PACKS+=" "  # gstreamer1.0-alsa does not exist for Rocky Linux 9.5
+				#TMP_PACKS+=" "  # gstreamer1.0-gl does not exist for Rocky Linux 9.5
+				#TMP_PACKS+=" "  # gstreamer1.0-pulseaudio does not exist for Rocky Linux 9.5
+			fi
+			sudo ${LVAR_LX_PKGMAN} install -y \
+					${TMP_PACKS} \
 					|| exit 1
-			if [ "${COMPILE_WITH_GUI}" = "true" ]; then
-				echo "${VAR_MYNAME}: running 'apt-get install [...]'"
-				sudo apt-get install -y \
+			if [ "${COMPILE_WITH_GUI}" = "true" ] && [ "${LVAR_IS_DEBIAN}" = "true" ]; then
+				echo "${VAR_MYNAME}: running '${LVAR_LX_PKGMAN} install [...]'"
+				sudo ${LVAR_LX_PKGMAN} install -y \
 						gstreamer1.0-x \
 						gstreamer1.0-gtk3 \
 						gstreamer1.0-qt5 \
@@ -189,8 +246,8 @@ if [ "${COMPILE_WITH_JAVA}" = "true" ]; then
 
 	case "${LVAR_OSNAME}" in
 		linux)
-			echo "${VAR_MYNAME}: running 'apt-get install [...]'"
-			sudo apt-get install -y \
+			echo "${VAR_MYNAME}: running '${LVAR_LX_PKGMAN} install [...]'"
+			sudo ${LVAR_LX_PKGMAN} install -y \
 					ant \
 					|| exit 1
 			;;
@@ -206,8 +263,12 @@ fi
 if [ "${NEED_LIBCAMERA}" = "true" ]; then
 	case "${LVAR_OSNAME}" in
 		linux)
-			echo "${VAR_MYNAME}: running 'apt-get install [...]'"
-			sudo apt-get install -y \
+			echo "${VAR_MYNAME}: running '${LVAR_LX_PKGMAN} install [...]'"
+			if [ "${LVAR_IS_DEBIAN}" != "true" ]; then
+				echo "${VAR_MYNAME}: Error: libcamera-dev should only be installed on Debian" >>/dev/stderr
+				exit 1
+			fi
+			sudo ${LVAR_LX_PKGMAN} install -y \
 					libcamera-dev \
 					|| exit 1
 			;;
