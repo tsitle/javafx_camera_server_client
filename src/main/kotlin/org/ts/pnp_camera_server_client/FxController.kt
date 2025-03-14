@@ -109,18 +109,6 @@ open class FxController {
 	 */
 	@FXML
 	protected fun initialize() {
-		// load the native OpenCV library
-		var tmpOpenCvLibName = Core.NATIVE_LIBRARY_NAME
-		tmpOpenCvLibName = tmpOpenCvLibName.replace(Core.VERSION.replace(".", ""), "")
-		try {
-			println("Load lib '${tmpOpenCvLibName}' (bundled JAR version=${Core.VERSION})")
-			System.loadLibrary(tmpOpenCvLibName)
-		} catch (ex: UnsatisfiedLinkError) {
-			println("Failed to load lib '${tmpOpenCvLibName}'. Trying to load '${Core.NATIVE_LIBRARY_NAME}'")
-			System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
-		}
-
-		//
 		initUiPropHandling()
 
 		//
