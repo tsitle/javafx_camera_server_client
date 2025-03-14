@@ -1,6 +1,7 @@
 package org.ts.pnp_camera_server_client
 
 import javafx.application.Platform
+import javafx.concurrent.Task
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.control.*
@@ -318,24 +319,19 @@ open class FxController {
 				break
 			}
 			if (++readStatusTo == 10) {
-				Platform.runLater(runnerGetServerStatusSub())
+				if (connectionLost) {
+					Platform.runLater {
+						uiProps.connectionOpen.value = false
+						uiProps.statusMsg.value = "Connection lost"
+					}
+					connectionLost = false
+				} else if (capture?.isOpened == true) {
+					apiClientFncs?.getServerStatus(true)
+				}
 				readStatusTo = 0
 			}
 		}
 		println("ending threadStatus")
-	}
-
-	/**
-	 * Sub-Runner for "Get server status" thread - does the actual polling of the server's status
-	 */
-	private fun runnerGetServerStatusSub() = Runnable {
-		if (connectionLost) {
-			uiProps.connectionOpen.value = false
-			uiProps.statusMsg.value = "Connection lost"
-			connectionLost = false
-		} else if (capture?.isOpened == true) {
-			apiClientFncs?.getServerStatus(true)
-		}
 	}
 
 	/**
@@ -387,33 +383,6 @@ open class FxController {
 	}
 
 	/**
-	 * Stop the acquisition from the camera and release all the resources
-	 */
-	private fun stopAcquisition() {
-		if (this.timerFrames != null && ! timerFrames!!.isShutdown) {
-			try {
-				// stop the timer
-				timerFrames!!.shutdown()
-				var cnt = 0
-				while (! timerFrames!!.awaitTermination(500, TimeUnit.MILLISECONDS)) {
-					System.err.println("TimerFrames still active")
-					if (++cnt == 10) {
-						System.err.println("Ignoring timer (this might crash the application)")
-						break
-					}
-				}
-			} catch (e: InterruptedException) {
-				System.err.println("Exception in stopping the frame capture, trying to release the camera now... $e")
-			}
-		}
-
-		if (capture?.isOpened == true) {
-			// release the camera
-			capture?.release()
-		}
-	}
-
-	/**
 	 * Update the [ImageView] in the JavaFX main thread
 	 *
 	 * @param view the [ImageView] to update
@@ -427,9 +396,9 @@ open class FxController {
 	 * On application close, stop the acquisition from the camera
 	 */
 	fun setClosed() {
-		this.stopAcquisition()
+		doKillThreadStatus = true
 		//
-		this.doKillThreadStatus = true
+		connectionClose()
 	}
 
 	/**
@@ -497,29 +466,34 @@ open class FxController {
 	}
 
 	/**
-	 * Event: Button "Connection: Connect" pressed
-	 *
-	 * @param event
+	 * Open server connection
 	 */
-	@FXML
-	protected fun evtConConnect(event: ActionEvent?) {
-		// update UI
-		serverUrlTxtfld.isDisable = true
-		serverApiKeyTxtfld.isDisable = true
+	private fun connectionOpen() {
+		if (serverUrlTxtfld.text.isEmpty() || serverApiKeyTxtfld.text.isEmpty()) {
+			// update UI
+			uiProps.statusMsg.set("Cannot connect because of missing URL or API Key")
+			conConnectBtn.isDisable = false
+			serverUrlTxtfld.isDisable = false
+			serverApiKeyTxtfld.isDisable = false
+			return
+		}
+
 		//
-		if (! uiProps.connectionOpen.value) {
-			if (serverUrlTxtfld.text.isNotEmpty() && serverApiKeyTxtfld.text.isNotEmpty()) {
-				apiClientFncs = ApiClientFncs(
-						serverUrlTxtfld.text,
-						serverApiKeyTxtfld.text,
-						uiProps
-				)
+		val task: Task<Boolean> = object : Task<Boolean>() {
+			@Throws(java.lang.Exception::class)
+			override fun call(): Boolean {
 				// start the video capture
 				capture?.open("${serverUrlTxtfld.text}/stream.mjpeg?cid=${uiProps.clientId.value}")
-			}
 
-			// is the video stream available?
-			if (capture?.isOpened == true) {
+				return (capture?.isOpened == true)  // is the video stream available?
+			}
+		}
+
+		task.setOnSucceeded { _ ->  // we're on the JavaFX application thread here
+			val result: Boolean = task.getValue()
+			if (result) {
+				obsPropsPrintlnAllowed = true
+				//
 				uiProps.connectionOpen.value = true
 
 				// grab a frame every x ms (== 1000 / y frames/sec)
@@ -538,24 +512,97 @@ open class FxController {
 						0,
 						round(1000.0 / cameraOutputFps.toDouble()).toLong(),
 						TimeUnit.MILLISECONDS
-				)
+					)
 
 				// update UI
 				uiProps.statusMsg.set("Connected")
 			} else {
-				System.err.println("Could not open server connection...")
-				uiProps.statusMsg.set("Could not open server connection")
+				// update UI
+				val errMsg = "Could not open server connection"
+				System.err.println(errMsg)
+				uiProps.statusMsg.set(errMsg)
+				serverUrlTxtfld.isDisable = false
+				serverApiKeyTxtfld.isDisable = false
 			}
-		} else {
-			// the camera is not active at this point
-			uiProps.connectionOpen.value = false
 			// update UI
-			uiProps.statusMsg.set("Disconnected")
-
-			// stop the timer
-			this.stopAcquisition()
+			conConnectBtn.isDisable = false
 		}
 
+		task.setOnFailed { _ ->  // we're on the JavaFX application thread here
+			uiProps.statusMsg.value = "Error: ${task.getException().message}"
+		}
+
+		//
+		apiClientFncs = ApiClientFncs(
+				serverUrlTxtfld.text,
+				serverApiKeyTxtfld.text,
+				uiProps
+			)
+		// update UI
+		uiProps.statusMsg.set("Connecting to '${serverUrlTxtfld.text}'...")
+		//
+		Thread(task).start()
+	}
+
+	/**
+	 * Close server connection
+	 */
+	private fun connectionClose() {
+		val that = this
+		val task: Task<Boolean> = object : Task<Boolean>() {
+			override fun call(): Boolean {
+				if (that.timerFrames != null && ! that.timerFrames!!.isShutdown) {
+					try {
+						// stop the timer
+						that.timerFrames!!.shutdown()
+						var cnt = 0
+						while (! that.timerFrames!!.awaitTermination(500, TimeUnit.MILLISECONDS)) {
+							System.err.println("TimerFrames still active")
+							if (++cnt == 10) {
+								System.err.println("Ignoring timer (this might crash the application)")
+								break
+							}
+						}
+					} catch (ex: InterruptedException) {
+						System.err.println("Exception in stopping the frame capture: ${ex.message}")
+					}
+				}
+
+				if (capture?.isOpened == true) {
+					// release the camera
+					capture?.release()
+				}
+
+				return true
+			}
+		}
+
+		// the camera is not active at this point
+		uiProps.connectionOpen.value = false
+		// update UI
+		uiProps.statusMsg.set("Disconnected")
+		conConnectBtn.isDisable = false
+		//
+		Thread(task).start()
+	}
+
+	/**
+	 * Event: Button "Connection: Connect" pressed
+	 *
+	 * @param event
+	 */
+	@FXML
+	protected fun evtConConnect(event: ActionEvent?) {
+		// update UI
+		conConnectBtn.isDisable = true
+		serverUrlTxtfld.isDisable = true
+		serverApiKeyTxtfld.isDisable = true
+		//
+		if (! uiProps.connectionOpen.value) {
+			connectionOpen()
+		} else {
+			connectionClose()
+		}
 		//
 		moveFocusAwayFromControls()
 	}
