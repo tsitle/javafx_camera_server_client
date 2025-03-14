@@ -91,6 +91,9 @@ open class FxController {
 	// API Client Functions Wrapper
 	private var apiClientFncs: ApiClientFncs? = null
 
+	// are the ObservableProperty listeners allowed to output to the console already?
+	private var obsPropsPrintlnAllowed = false
+
 	// has the server connection been lost?
 	private var connectionLost = false
 
@@ -138,39 +141,45 @@ open class FxController {
 	 * Initialize uiProps handling
 	 */
 	private fun initUiPropHandling() {
-		uiProps.clientId.subscribe { it -> println("Client ID: ${it.toInt()}") }
+		uiProps.clientId.subscribe { it -> if (obsPropsPrintlnAllowed) {
+			println("Client ID: ${it.toInt()}")
+		}}
 		uiProps.clientId.value = (Random.nextDouble() * 1000.0).toInt()
 
 		//
 		statusLbl.textProperty().bind(uiProps.statusMsg)
-		statusLbl.textProperty().subscribe { it -> println("Status: '$it'") }
+		statusLbl.textProperty().subscribe { it -> if (obsPropsPrintlnAllowed) {
+			println("Status: '$it'")
+		}}
 
 		//
-		uiProps.ctrlShowGrid.subscribe { it ->
-				println("Show Grid: $it")
-				ctrlShowGridCbx.isSelected = it
-			}
+		uiProps.ctrlShowGrid.subscribe { it -> if (obsPropsPrintlnAllowed) {
+			println("Show Grid: $it")
+			ctrlShowGridCbx.isSelected = it
+		}}
 
 		//
-		uiProps.connectionOpen.subscribe { it ->
-				conConnectBtn.styleClass.removeAll("btn-danger", "btn-default", "btn-success")
-				conConnectBtn.styleClass.add(if (it) "btn-danger" else "btn-success")
-				conConnectBtn.text = (if (it) "Disconnect" else "Connect")
-				setTooltipOfButton(conConnectBtn, if (it) "Disconnect from server" else "Connect to server")
+		uiProps.connectionOpen.subscribe { it -> if (obsPropsPrintlnAllowed) {
+			conConnectBtn.styleClass.removeAll("btn-danger", "btn-default", "btn-success")
+			conConnectBtn.styleClass.add(if (it) "btn-danger" else "btn-success")
+			conConnectBtn.text = (if (it) "Disconnect" else "Connect")
+			setTooltipOfButton(conConnectBtn, if (it) "Disconnect from server" else "Connect to server")
 
-				serverUrlTxtfld.isDisable = it
-				serverApiKeyTxtfld.isDisable = it
+			serverUrlTxtfld.isDisable = it
+			serverApiKeyTxtfld.isDisable = it
 
-				handleUiPropChangeForCtrlCamButtons()
-				ctrlShowGridCbx.isDisable = ! it
-				handleUiPropChangeForCtrlZoomButtons()
+			handleUiPropChangeForCtrlCamButtons()
+			ctrlShowGridCbx.isDisable = ! it
+			handleUiPropChangeForCtrlZoomButtons()
 
-				bncBrightnSlid.isDisable = ! it
-				bncContrSlid.isDisable = ! it
-			}
+			bncBrightnSlid.isDisable = ! it
+			bncContrSlid.isDisable = ! it
+		}}
 
 		//
-		uiProps.serverAppVersion.subscribe { it -> println("Server app version: $it")}
+		uiProps.serverAppVersion.subscribe { it -> if (obsPropsPrintlnAllowed) {
+			println("Server app version: $it")
+		}}
 
 		//
 		///
