@@ -3,8 +3,15 @@ build_openapi_client/pnp_openapi_client/
 
 build_opencv/**/build/
 build_opencv/**/opencv-*/
+build_opencv/**/opencv-*.tar.gz
+build_opencv/**/opencv-*.tgz
 
-.gradle
+docs/notes.md
+
+build.gradle--*
+build.gradle.kts--*
+
+.gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
