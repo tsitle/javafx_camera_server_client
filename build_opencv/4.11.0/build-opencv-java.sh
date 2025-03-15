@@ -4,12 +4,15 @@
 # by TS, Mar 2025
 #
 
-COMPILE_WITH_GUI=false
-COMPILE_WITH_FFMPEG=true
-COMPILE_WITH_GSTREAMER=false
-COMPILE_WITH_JAVA=true
-NEED_LIBCAMERA=false  # only Raspberry Pi
-COMPILE_STATIC_LIBS=true  # mainly for Java
+# shellcheck disable=SC2034
+CFG_COMPILE_WITH_GUI=false
+CFG_COMPILE_WITH_FFMPEG=true
+CFG_COMPILE_WITH_GSTREAMER=false
+CFG_COMPILE_WITH_PYTHON3=false
+CFG_COMPILE_WITH_JAVA=true
+CFG_NEED_LIBCAMERA=false  # only Raspberry Pi
+CFG_COMPILE_STATIC_LIBS=true  # mainly for Java
+CFG_INSTALL_TO_SYSTEM=false
 
 # ----------------------------------------------------------------------------------------------------------------------
 
