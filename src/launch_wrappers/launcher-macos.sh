@@ -97,7 +97,7 @@ fi
 # ----------------------------------------------------------------------------------------------------------------------
 
 LVAR_JAVA_LIB_PATH_CUSTOM="lib_opencv-${LCFG_OS_TYPE}-${LVAR_ARCH}"
-LVAR_JAVA_LIB_PATH_BREW="/usr/lib/java"
+LVAR_JAVA_LIB_PATH_BREW="/usr/local/opt/opencv/share/java/opencv4"
 
 TMP_JAVA_LIB_PATH="${LVAR_JAVA_LIB_PATH_CUSTOM}"
 if [ ! -d "${TMP_JAVA_LIB_PATH}" ]; then
