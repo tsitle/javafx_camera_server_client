@@ -52,6 +52,10 @@ LVAR_ARCH="$(_getCpuArch)"
 #export JAVA_HOME="/Library/Java/JavaVirtualMachines/graalvm-jdk-22.0.2-macos_x64/Contents/Home"
 
 if [ -z "${JAVA_HOME}" ]; then
+	if ! command -v /usr/libexec/java_home >/dev/null 2>&1; then
+		echo "Error: Could not find '/usr/libexec/java_home' and JAVA_HOME is not set" >>/dev/stderr
+		exit 1
+	fi
 	export JAVA_HOME="$(/usr/libexec/java_home -v ${LCFG_JAVA_MIN_LANG_LEVEL})"
 fi
 
@@ -92,6 +96,22 @@ fi
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-export JAVA_OPTS="-Djava.library.path=lib_opencv-${LCFG_OS_TYPE}-${LVAR_ARCH} --module-path lib --add-modules=javafx.controls,javafx.fxml"
+LVAR_JAVA_LIB_PATH_CUSTOM="lib_opencv-${LCFG_OS_TYPE}-${LVAR_ARCH}"
+LVAR_JAVA_LIB_PATH_BREW="/usr/lib/java"
+
+TMP_JAVA_LIB_PATH="${LVAR_JAVA_LIB_PATH_CUSTOM}"
+if [ ! -d "${TMP_JAVA_LIB_PATH}" ]; then
+	TMP_JAVA_LIB_PATH="${LVAR_JAVA_LIB_PATH_BREW}"
+	if [ ! -d "${TMP_JAVA_LIB_PATH}" ]; then
+		{
+			echo "Error: Could not find Java library path"
+			echo -e "\nTried:"
+			echo "  ${LVAR_JAVA_LIB_PATH_CUSTOM}/"
+			echo "  ${LVAR_JAVA_LIB_PATH_BREW}/"
+		} >> /dev/stderr
+		exit 1
+	fi
+fi
+export JAVA_OPTS="-Djava.library.path=${TMP_JAVA_LIB_PATH} --module-path lib --add-modules=javafx.controls,javafx.fxml"
 
 ./bin/pnp_camera_server_client
