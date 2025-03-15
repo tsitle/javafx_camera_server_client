@@ -87,8 +87,14 @@ fi
 
 case "${LVAR_OSNAME}" in
 	linux)
-		echo "${VAR_MYNAME}: running '${LVAR_LX_PKGMAN} update'"
-		sudo ${LVAR_LX_PKGMAN} update || exit 1
+		if [ "${LVAR_IS_DEBIAN}" = "true" ]; then
+			echo "${VAR_MYNAME}: running '${LVAR_LX_PKGMAN} update'"
+			sudo ${LVAR_LX_PKGMAN} update || exit 1
+		else
+			# not running 'dnf update' here because it would try to update
+			# already installed packages
+			echo -n
+		fi
 		echo "${VAR_MYNAME}: running '${LVAR_LX_PKGMAN} install [...]'"
 		if [ "${LVAR_IS_DEBIAN}" = "true" ]; then
 			TMP_PACKS="libgnutls28-dev libv4l-dev"
