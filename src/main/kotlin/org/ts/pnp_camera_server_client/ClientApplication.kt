@@ -69,21 +69,38 @@ class ClientApplication : Application() {
 	/**
 	 * Load the native OpenCV library
 	 */
+	@Throws(UnsatisfiedLinkError::class)
 	private fun loadOpenCvLib() {
-		var tmpOpenCvLibNameNoVers = Core.NATIVE_LIBRARY_NAME
-		tmpOpenCvLibNameNoVers = tmpOpenCvLibNameNoVers.replace(Core.VERSION.replace(".", ""), "")
-		try {
-			println("Load lib '${tmpOpenCvLibNameNoVers}' (bundled JAR version=${Core.VERSION})")
-			System.loadLibrary(tmpOpenCvLibNameNoVers)
-		} catch (ex: UnsatisfiedLinkError) {
-			val tmpOpenCvLibName460 = "${tmpOpenCvLibNameNoVers}460"
+		fun loadOne(libName: String): Boolean {
 			try {
-				println("Failed to load lib '${tmpOpenCvLibNameNoVers}'. Trying to load '${tmpOpenCvLibName460}'")
-				System.loadLibrary(tmpOpenCvLibName460)
+				//println("Trying to load '${libName}'")
+				System.loadLibrary(libName)
+				//println("Successfully loaded lib '${libName}'")
 			} catch (ex: UnsatisfiedLinkError) {
-				println("Failed to load lib '${tmpOpenCvLibName460}'. Trying to load '${Core.NATIVE_LIBRARY_NAME}'")
-				System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
+				//println("Failed to load lib '${libName}'")
+				return false
 			}
+			return true
+		}
+
+		val tmpOpenCvLibNameNoVers = Core.NATIVE_LIBRARY_NAME
+				.replace(Core.VERSION.replace(".", ""), "")
+
+		println("Loading OpenCV lib")
+		var resB = loadOne(tmpOpenCvLibNameNoVers)
+		if (! resB) {
+			val tmpOpenCvLibName490 = "${tmpOpenCvLibNameNoVers}490"
+			resB = loadOne(tmpOpenCvLibName490)
+		}
+		if (! resB) {
+			val tmpOpenCvLibName460 = "${tmpOpenCvLibNameNoVers}460"
+			resB = loadOne(tmpOpenCvLibName460)
+		}
+		if (! resB) {
+			resB = loadOne(Core.NATIVE_LIBRARY_NAME)
+		}
+		if (! resB) {
+			throw UnsatisfiedLinkError("Failed to load OpenCV lib")
 		}
 	}
 }
