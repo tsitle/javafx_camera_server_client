@@ -130,25 +130,25 @@ open class FxController {
 	 * Initialize uiProps handling
 	 */
 	private fun initUiPropHandling() {
-		uiProps.clientId.subscribe { it -> if (obsPropsPrintlnAllowed) {
+		uiProps.clientId.subscribe { it -> if (obsPropsPrintlnAllowed && ! doKillThreadStatus) {
 			println("Client ID: ${it.toInt()}")
 		}}
 		uiProps.clientId.value = (Random.nextDouble() * 1000.0).toInt()
 
 		//
 		statusLbl.textProperty().bind(uiProps.statusMsg)
-		statusLbl.textProperty().subscribe { it -> if (obsPropsPrintlnAllowed) {
+		statusLbl.textProperty().subscribe { it -> if (obsPropsPrintlnAllowed && ! doKillThreadStatus) {
 			println("Status: '$it'")
 		}}
 
 		//
-		uiProps.ctrlShowGrid.subscribe { it -> if (obsPropsPrintlnAllowed) {
+		uiProps.ctrlShowGrid.subscribe { it -> if (obsPropsPrintlnAllowed && ! doKillThreadStatus) {
 			println("Show Grid: $it")
 			ctrlShowGridCbx.isSelected = it
 		}}
 
 		//
-		uiProps.connectionOpen.subscribe { it -> if (obsPropsPrintlnAllowed) {
+		uiProps.connectionOpen.subscribe { it -> if (obsPropsPrintlnAllowed && ! doKillThreadStatus) {
 			conConnectBtn.styleClass.removeAll("btn-danger", "btn-default", "btn-success")
 			conConnectBtn.styleClass.add(if (it) "btn-danger" else "btn-success")
 			conConnectBtn.text = (if (it) "Disconnect" else "Connect")
@@ -166,7 +166,7 @@ open class FxController {
 		}}
 
 		//
-		uiProps.serverAppVersion.subscribe { it -> if (obsPropsPrintlnAllowed) {
+		uiProps.serverAppVersion.subscribe { it -> if (obsPropsPrintlnAllowed && ! doKillThreadStatus) {
 			println("Server app version: $it")
 		}}
 
@@ -306,7 +306,7 @@ open class FxController {
 				Thread.interrupted()
 				break
 			}
-			if (++readStatusTo == 10) {
+			if (++readStatusTo == 10 && ! doKillThreadStatus) {
 				if (connectionLost) {
 					Platform.runLater {
 						uiProps.connectionOpen.value = false
