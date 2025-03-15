@@ -1,11 +1,5 @@
 import org.gradle.internal.os.OperatingSystem
 
-/*
- * Interesting article on how to write a Gradle build file for
- * modular and non-modular Java projects:
- *   https://foojay.io/today/building-javafx-with-gradle/
- */
-
 plugins {
 	id("java")
 	id("application")
@@ -21,13 +15,92 @@ repositories {
 	mavenCentral()
 }
 
-//val javaJdkPathMac = "/Library/Java/JavaVirtualMachines/liberica-jdk-21.0.6-full-macos_x64/Contents/Home"
-//val javaFxSdkPathMac = "/Library/Java/Extensions/javafx-sdk-23.0.2-osx_x64/lib"
-//val javaFxJmodsPathMac = "/Library/Java/Extensions/javafx-jmods-23.0.2-osx_x64"
+// ---------------------------------------------------------------------------------------------------------------------
 
-val openCvJar = "build_opencv/4.11.0/build/bin/opencv-4110.jar"
-val openCvLibFolder = "build_opencv/4.11.0/build/lib/"
+val osName: String = if (OperatingSystem.current().isMacOsX) {
+		"macos"
+	} else if (OperatingSystem.current().isLinux) {
+		"linux"
+	} else if (OperatingSystem.current().isWindows) {
+		"win"
+	} else {
+		throw Error("Operating System not supported")
+	}
+val cpuArch: String = when (System.getProperty("os.arch")) {
+		"x86_64", "amd64" -> "x64"
+		"aarch64" -> "aarch64"
+		else -> throw Error("CPU Architecture not supported")
+	}
+if (osName == "win" && cpuArch != "x64") {
+	throw Error("Cannot build for ${osName}-${cpuArch}")
+}
 
+println("Host: ${osName}-${cpuArch}")
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+// OpenCV version in 'build_opencv/'
+val versionOpenCvCustom = "4.11.0"
+// OpenCV build directory
+val dpathOpenCvBuildCustom = "build_opencv/${versionOpenCvCustom}/build"
+
+val nodotsVersionOpenCvCustom = versionOpenCvCustom.replace(".", "")
+
+val dpathOpenCvLibCustom = "${dpathOpenCvBuildCustom}/lib"
+val dpathOpenCvLibBrew = "/usr/lib/java/dont/know"  // @TODO
+val dpathOpenCvLibRh = "/usr/lib/java"
+val dpathOpenCvLibDeb = "/usr/lib/jni"
+val dpathOpenCvLibWin = "c:/dont/know"  // @TODO
+
+val fpathOpenCvLibCustomBuild = dpathOpenCvLibCustom + (when (osName) {
+		"macos" -> "/libopencv_java${nodotsVersionOpenCvCustom}.dylib"
+		"linux" -> "/libopencv_java${nodotsVersionOpenCvCustom}.so"
+		else -> "/libopencv_java${nodotsVersionOpenCvCustom}.dll"  // @TODO
+	})
+
+val fpathOpenCvJarCustom = "${dpathOpenCvBuildCustom}/bin/opencv-${nodotsVersionOpenCvCustom}.jar"
+val fpathOpenCvJarBrew = "/usr/lib/java/dont/know/opencv.jar"  // @TODO
+val fpathOpenCvJarRh = "/usr/lib/java/opencv.jar"
+val fpathOpenCvJarDeb = "/usr/share/java/opencv.jar"
+val fpathOpenCvJarWin = "c:/dont/know/opencv.jar"  // @TODO
+
+var openCvJar = ""
+var openCvLibFolder = ""
+if (File(fpathOpenCvLibCustomBuild).exists() && File(fpathOpenCvJarCustom).exists()) {
+	println("Using custom build of OpenCV $versionOpenCvCustom")
+	openCvLibFolder = dpathOpenCvLibCustom
+	openCvJar = fpathOpenCvJarCustom
+} else {
+	if (osName == "macos") {
+		if (File(dpathOpenCvLibBrew).exists() && File(fpathOpenCvJarBrew).exists()) {
+			openCvLibFolder = dpathOpenCvLibBrew
+			openCvJar = fpathOpenCvJarBrew
+		}
+	} else if (osName == "linux") {
+		if (File(dpathOpenCvLibRh).exists() && File(fpathOpenCvJarRh).exists()) {
+			// Redhat
+			openCvLibFolder = dpathOpenCvLibRh
+			openCvJar = fpathOpenCvJarRh
+		} else {
+			if (File(dpathOpenCvLibDeb).exists() && File(fpathOpenCvJarDeb).exists()) {
+				// Debian
+				openCvLibFolder = dpathOpenCvLibDeb
+				openCvJar = fpathOpenCvJarDeb
+			}
+		}
+	} else if (osName == "win") {
+		if (File(dpathOpenCvLibWin).exists() && File(fpathOpenCvJarWin).exists()) {
+			openCvLibFolder = dpathOpenCvLibWin
+			openCvJar = fpathOpenCvJarWin
+		}
+	}
+}
+
+if (openCvJar.isEmpty() || openCvLibFolder.isEmpty()) {
+	throw Error("Could not find OpenCV")
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 tasks.compileJava.configure {
 	options.encoding = "UTF-8"
@@ -35,7 +108,7 @@ tasks.compileJava.configure {
 
 application {
 	mainClass = "org.ts.pnp_camera_server_client.ClientApplication"
-	applicationDefaultJvmArgs += "-Djava.library.path=$openCvLibFolder"
+	applicationDefaultJvmArgs += "-Djava.library.path=${openCvLibFolder}"
 }
 
 java {
@@ -74,43 +147,19 @@ dependencies {
 
 distributions {
 	main {
-		val osName: String = if (OperatingSystem.current().isMacOsX) {
-				"macos"
-			} else if (OperatingSystem.current().isLinux) {
-				"linux"
-			} else if (OperatingSystem.current().isWindows) {
-				"win"
-			} else {
-				throw Error("Operating System not supported")
-			}
-		val cpuArch: String = if (System.getProperty("os.arch") == "x86_64" || System.getProperty("os.arch") == "amd64") {
-				"x64"
-			} else if (System.getProperty("os.arch") == "aarch64") {
-				"aarch64"
-			} else {
-				throw Error("CPU Architecture not supported")
-			}
-		if (osName == "win" && cpuArch != "x64") {
-			throw Error("Cannot build Distribution for ${osName}-${cpuArch}")
-		}
+		// get value of property 'rootProject' from 'settings.gradle' file
+		val tmpPropProj = project.findProperty("rootProject")!! as org.gradle.api.internal.project.DefaultProject
+		val tmpProjName = tmpPropProj.project!!.name  // tmpPropProj.project is actually nullable (Gradle 8.10)
 
-		println("Host: ${osName}-${cpuArch}")
-		distributionBaseName = "pnp_camera_server_client-${osName}-${cpuArch}"
+		distributionBaseName = "${tmpProjName}-${osName}-${cpuArch}"
 
-		if (OperatingSystem.current().isMacOsX || OperatingSystem.current().isLinux) {
-			contents {
+		contents {
+			if (File(dpathOpenCvLibCustom).exists() && File(fpathOpenCvJarCustom).exists()) {
 				into("lib_opencv-${osName}-${cpuArch}") {
-					from("build_opencv/4.11.0/build/lib")
+					from(dpathOpenCvLibCustom)
 				}
-				from("src/launch_wrappers/launcher-${osName}.sh")
 			}
-		} else if (OperatingSystem.current().isWindows) {
-			contents {
-				into("lib_opencv-${osName}-${cpuArch}") {
-					from("build_opencv/4.11.0/build/lib")
-				}
-				from("src/launch_wrappers/launcher-${osName}.cmd")
-			}
+			from("src/launch_wrappers/launcher-${osName}.sh")
 		}
 	}
 }
