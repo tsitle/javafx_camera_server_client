@@ -47,7 +47,7 @@ val dpathOpenCvBuildCustom = "build_opencv/${versionOpenCvCustom}/build"
 val nodotsVersionOpenCvCustom = versionOpenCvCustom.replace(".", "")
 
 val dpathOpenCvLibCustom = "${dpathOpenCvBuildCustom}/lib"
-val dpathOpenCvLibBrew = "/usr/lib/java/dont/know"  // @TODO
+val dpathOpenCvLibBrew = "/usr/local/opt/opencv/share/java/opencv4"  // (symlink to '/usr/local/Cellar/opencv/${versionOpenCvCustom}_1/share/java/opencv4')
 val dpathOpenCvLibRh = "/usr/lib/java"
 val dpathOpenCvLibDeb = "/usr/lib/jni"
 val dpathOpenCvLibWin = "c:/dont/know"  // @TODO
@@ -59,7 +59,7 @@ val fpathOpenCvLibCustomBuild = dpathOpenCvLibCustom + (when (osName) {
 	})
 
 val fpathOpenCvJarCustom = "${dpathOpenCvBuildCustom}/bin/opencv-${nodotsVersionOpenCvCustom}.jar"
-val fpathOpenCvJarBrew = "/usr/lib/java/dont/know/opencv.jar"  // @TODO
+val fpathOpenCvJarBrew = "/usr/local/opt/opencv/share/java/opencv4/opencv-${nodotsVersionOpenCvCustom}.jar"
 val fpathOpenCvJarRh = "/usr/lib/java/opencv.jar"
 val fpathOpenCvJarDeb = "/usr/share/java/opencv.jar"
 val fpathOpenCvJarWin = "c:/dont/know/opencv.jar"  // @TODO
@@ -156,7 +156,8 @@ distributions {
 		contents {
 			if (File(dpathOpenCvLibCustom).exists() && File(fpathOpenCvJarCustom).exists()) {
 				into("lib_opencv-${osName}-${cpuArch}") {
-					from(dpathOpenCvLibCustom)
+					from(dpathOpenCvLibCustom, fpathOpenCvJarCustom)
+					include("*.dylib", "*.so", "*.jar")
 				}
 			}
 			from("src/launch_wrappers/launcher-${osName}.sh")
