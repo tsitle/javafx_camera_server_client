@@ -46,23 +46,33 @@ val dpathOpenCvBuildCustom = "build_opencv/${versionOpenCvCustom}/build"
 
 val nodotsVersionOpenCvCustom = versionOpenCvCustom.replace(".", "")
 
+val winEnvOpenCvDir: String? = if (osName == "win") {
+		System.getenv("OpenCV_DIR")
+	} else {
+		""
+	}
+if (osName == "win" && winEnvOpenCvDir != null && winEnvOpenCvDir.contains("\"")) {
+	throw Error("Env var 'OpenCV_DIR' may not contain quotes: '${winEnvOpenCvDir}'")
+}
+
 val dpathOpenCvLibCustom = "${dpathOpenCvBuildCustom}/lib"
 val dpathOpenCvLibBrew = "/usr/local/opt/opencv/share/java/opencv4"  // (symlink to '/usr/local/Cellar/opencv/${versionOpenCvCustom}_1/share/java/opencv4')
 val dpathOpenCvLibRh = "/usr/lib/java"
 val dpathOpenCvLibDeb = "/usr/lib/jni"
-val dpathOpenCvLibWin = "c:/dont/know"  // @TODO
+val dpathOpenCvLibWin = "${winEnvOpenCvDir}\\java\\${cpuArch}"
+val dpathOpenCvLibFfmpegWin = "${winEnvOpenCvDir}\\${cpuArch}\\vc16\\bin"  // directory where 'opencv_videoio_ffmpeg<VERSION>_64.dll' is. Needs to be in env var 'PATH'
 
 val fpathOpenCvLibCustomBuild = dpathOpenCvLibCustom + (when (osName) {
 		"macos" -> "/libopencv_java${nodotsVersionOpenCvCustom}.dylib"
 		"linux" -> "/libopencv_java${nodotsVersionOpenCvCustom}.so"
-		else -> "/libopencv_java${nodotsVersionOpenCvCustom}.dll"  // @TODO
+		else -> "/libopencv_java${nodotsVersionOpenCvCustom}.dll"
 	})
 
 val fpathOpenCvJarCustom = "${dpathOpenCvBuildCustom}/bin/opencv-${nodotsVersionOpenCvCustom}.jar"
 val fpathOpenCvJarBrew = "/usr/local/opt/opencv/share/java/opencv4/opencv-${nodotsVersionOpenCvCustom}.jar"
 val fpathOpenCvJarRh = "/usr/lib/java/opencv.jar"
 val fpathOpenCvJarDeb = "/usr/share/java/opencv.jar"
-val fpathOpenCvJarWin = "c:/dont/know/opencv.jar"  // @TODO
+val fpathOpenCvJarWin = "${winEnvOpenCvDir}\\java\\opencv-${nodotsVersionOpenCvCustom}.jar"
 
 var openCvJar = ""
 var openCvLibFolder = ""
@@ -73,25 +83,60 @@ if (File(fpathOpenCvLibCustomBuild).exists() && File(fpathOpenCvJarCustom).exist
 } else {
 	if (osName == "macos") {
 		if (File(dpathOpenCvLibBrew).exists() && File(fpathOpenCvJarBrew).exists()) {
+			println("Using system packaged version of OpenCV (BREW)")
 			openCvLibFolder = dpathOpenCvLibBrew
 			openCvJar = fpathOpenCvJarBrew
+		} else {
+			if (! File(dpathOpenCvLibBrew).exists()) {
+				System.err.println("Could not find '${dpathOpenCvLibBrew}/' (BREW)")
+			}
+			if (! File(fpathOpenCvJarBrew).exists()) {
+				System.err.println("Could not find '${fpathOpenCvJarBrew}' (BREW)")
+			}
 		}
 	} else if (osName == "linux") {
 		if (File(dpathOpenCvLibRh).exists() && File(fpathOpenCvJarRh).exists()) {
 			// Redhat
+			println("Using system packaged version of OpenCV (RH)")
 			openCvLibFolder = dpathOpenCvLibRh
 			openCvJar = fpathOpenCvJarRh
+		} else if (File(dpathOpenCvLibDeb).exists() && File(fpathOpenCvJarDeb).exists()) {
+			// Debian
+			println("Using system packaged version of OpenCV (DEB)")
+			openCvLibFolder = dpathOpenCvLibDeb
+			openCvJar = fpathOpenCvJarDeb
 		} else {
-			if (File(dpathOpenCvLibDeb).exists() && File(fpathOpenCvJarDeb).exists()) {
-				// Debian
-				openCvLibFolder = dpathOpenCvLibDeb
-				openCvJar = fpathOpenCvJarDeb
+			if (! File(dpathOpenCvLibRh).exists()) {
+				System.err.println("Could not find '${dpathOpenCvLibRh}/' (RH)")
+			}
+			if (! File(fpathOpenCvJarRh).exists()) {
+				System.err.println("Could not find '${fpathOpenCvJarRh}' (RH)")
+			}
+			if (! File(dpathOpenCvLibDeb).exists()) {
+				System.err.println("Could not find '${dpathOpenCvLibDeb}/' (DEB)")
+			}
+			if (! File(fpathOpenCvJarDeb).exists()) {
+				System.err.println("Could not find '${fpathOpenCvJarDeb}' (DEB)")
 			}
 		}
 	} else if (osName == "win") {
-		if (File(dpathOpenCvLibWin).exists() && File(fpathOpenCvJarWin).exists()) {
+		if (winEnvOpenCvDir == null) {
+			throw Error("Missing env var 'OpenCV_DIR'")
+		}
+		if (File(dpathOpenCvLibWin).exists() && File(dpathOpenCvLibFfmpegWin).exists() && File(fpathOpenCvJarWin).exists()) {
+			println("Using system packaged version of OpenCV (WIN)")
 			openCvLibFolder = dpathOpenCvLibWin
 			openCvJar = fpathOpenCvJarWin
+		} else {
+			if (! File(dpathOpenCvLibWin).exists()) {
+				System.err.println("Could not find '${dpathOpenCvLibWin}\\' (WIN)")
+			}
+			if (! File(dpathOpenCvLibFfmpegWin).exists()) {
+				System.err.println("Could not find '${dpathOpenCvLibFfmpegWin}\\' (WIN)")
+			}
+			if (! File(fpathOpenCvJarWin).exists()) {
+				System.err.println("Could not find '${fpathOpenCvJarWin}' (WIN)")
+			}
 		}
 	}
 }
@@ -145,6 +190,14 @@ dependencies {
 	implementation(files(openCvJar))
 }
 
+tasks.run {
+	if (osName == "win") {
+		if (System.getenv("PATH")?.contains(dpathOpenCvLibFfmpegWin) != true) {
+			throw Error("The directory '${dpathOpenCvLibFfmpegWin}' needs to be included in the env var 'PATH' !")
+		}
+	}
+}
+
 distributions {
 	main {
 		// get value of property 'rootProject' from 'settings.gradle' file
@@ -159,8 +212,17 @@ distributions {
 					from(dpathOpenCvLibCustom, fpathOpenCvJarCustom)
 					include("*.dylib", "*.so", "*.jar")
 				}
+			} else if (osName == "win") {
+				into("lib_opencv-${osName}-${cpuArch}") {
+					from(dpathOpenCvLibWin, dpathOpenCvLibFfmpegWin, fpathOpenCvJarWin)
+					include("opencv_java*.dll", "opencv_*_ffmpeg*.dll", "*.jar")
+				}
 			}
-			from("src/launch_wrappers/launcher-${osName}.sh")
+			if (osName == "win") {
+				from("src/launch_wrappers/launcher-${osName}.cmd")
+			} else {
+				from("src/launch_wrappers/launcher-${osName}.sh")
+			}
 		}
 	}
 }
