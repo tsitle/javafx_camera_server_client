@@ -64,7 +64,7 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 			uiProps!!.serverAppVersion.value = resultStat.version
 			//
 			uiProps!!.statusMsg.value = "Connected [${
-				resultStat.cpuTemperature?.toDouble()?.format(2)
+				resultStat.cpuTemperature?.toDouble()?.format(1)
 			} °C, FPS ${resultStat.framerate}${tmpZoomStr}]"
 			//
 			uiProps!!.ctrlShowGrid.value = resultStat.procGrid?.show ?: false
