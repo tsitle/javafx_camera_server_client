@@ -96,6 +96,13 @@ fi
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+if ! command -v ffmpeg >/dev/null 2>&1; then
+	echo "Error: Could not find ffmpeg executable" >>/dev/stderr
+	exit 1
+fi
+
+# ----------------------------------------------------------------------------------------------------------------------
+
 LVAR_JAVA_LIB_PATH_CUSTOM="lib_opencv-${LCFG_OS_TYPE}-${LVAR_ARCH}"
 LVAR_JAVA_LIB_PATH_BREW="/usr/local/opt/opencv/share/java/opencv4"
 
