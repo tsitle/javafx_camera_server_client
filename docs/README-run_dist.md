@@ -3,24 +3,36 @@
 ## Prerequisites
 
 - JRE or JDK version >= 21
-- Linux only: OpenCV version >= 4.6 (for macOS the distribution package comes bundled with OpenCV)
+- Linux only: OpenCV version >= 4.6 (for macOS and MS Windows the distribution package comes bundled with OpenCV)
 - macOS only: ffmpeg
+
+### Manually installed JRE or JDK
 
 If the JRE/JDK has been installed manually you can set the environment variable `JAVA_HOME` to point to the
 installation directory.
 
-Examples:
+#### Examples
 
-macOS:
-
-```
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-jdk-22.0.2-macos_x64/Contents/Home
-```
-
-Linux:
+##### macOS
 
 ```
-export JAVA_HOME=/opt/liberica-jdk-21.0.6-full-linux_x64
+$ export JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-jdk-22.0.2-macos_x64/Contents/Home
+```
+
+##### Linux
+
+```
+$ export JAVA_HOME=/opt/liberica-jdk-21.0.6-full-linux_x64
+```
+
+##### MS Windows
+
+```
+# to permanantly set the environment variable for the current user (will become available in next Terminal session):
+> setx JAVA_HOME "C:\Program Files\Java\openjdk-22.0.2-win_x64"
+
+# to set the environment variable only for the current terminal session:
+> set JAVA_HOME=C:\Program Files\Java\openjdk-22.0.2-win_x64
 ```
 
 ### Installation of dependencies on macOS
@@ -73,4 +85,8 @@ $ ./launcher-macos.sh
 or
 
 $ ./launcher-linux.sh
+
+or
+
+> launcher-win.cmd
 ```
