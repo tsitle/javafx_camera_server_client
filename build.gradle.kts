@@ -84,6 +84,7 @@ if (File(fpathOpenCvLibCustomBuild).exists() && File(fpathOpenCvJarCustom).exist
 	if (osName == "macos") {
 		if (File(dpathOpenCvLibBrew).exists() && File(fpathOpenCvJarBrew).exists()) {
 			println("Using system packaged version of OpenCV (BREW)")
+			System.err.println("Don't use the system packaged version of OpenCV for a distribution release on macOS !")
 			openCvLibFolder = dpathOpenCvLibBrew
 			openCvJar = fpathOpenCvJarBrew
 		} else {
