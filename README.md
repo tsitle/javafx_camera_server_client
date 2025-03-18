@@ -1,4 +1,4 @@
-# Camera Server Client
+# JavaFX Camera Server Client
 
 This is a JavaFX-based GUI for the [Raspberry Pi 5 Camera Streaming Server](https://github.com/tsitle/rpi5_camera_streaming_server).
 
