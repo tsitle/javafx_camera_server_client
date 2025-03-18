@@ -27,7 +27,9 @@ class ClientApplication : Application() {
 			val scene = Scene(rootElement, 800.0, 600.0)
 
 			// create the stage with the given title and the previously created scene
-			primaryStage.title = "Camera Streaming Client"
+			val tmpAppVersion = System.getProperty("appVersion")
+			println("Client app version: $tmpAppVersion")
+			primaryStage.title = "Camera Streaming Client" + (if (tmpAppVersion != null) " v${tmpAppVersion}" else "")
 			primaryStage.scene = scene
 
 			// add CSS to scene
