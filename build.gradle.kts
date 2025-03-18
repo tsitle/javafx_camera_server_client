@@ -1,3 +1,4 @@
+import org.gradle.internal.classpath.Instrumented.systemProperty
 import org.gradle.internal.os.OperatingSystem
 
 plugins {
@@ -9,7 +10,9 @@ plugins {
 }
 
 group = "org.ts"
-version = "1.1"
+version = "${project.findProperty("appVersion")}"  // read version from 'gradle.properties'
+
+println("Client app version: ${version}")
 
 repositories {
 	mavenCentral()
@@ -155,6 +158,7 @@ tasks.compileJava.configure {
 application {
 	mainClass = "org.ts.pnp_camera_server_client.ClientApplication"
 	applicationDefaultJvmArgs += "-Djava.library.path=${openCvLibFolder}"
+	applicationDefaultJvmArgs += "-DappVersion=${version}"
 }
 
 java {
