@@ -75,7 +75,7 @@ $ sudo apt install openjdk-21-jdk libopencv-java
 
 ## Running the application
 
-Download the distribution package from [TODO](https://todo) (@TODO).  
+Download the distribution package for your OS from [https://github.com/tsitle/javafx_camera_server_client/releases](https://github.com/tsitle/javafx_camera_server_client/releases).  
 Then extract the downloaded archive.  
 From the extracted application directory run:
 
