@@ -5,6 +5,7 @@ import org.openapitools.client.apis.DefaultApi
 import org.openapitools.client.infrastructure.ApiClient
 import org.openapitools.client.models.Status
 import org.openapitools.client.models.StatusCams
+import java.net.SocketException
 
 
 class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
@@ -67,6 +68,8 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 				resultStat.cpuTemperature?.toDouble()?.format(1)
 			} °C, FPS ${resultStat.framerate}${tmpZoomStr}]"
 			//
+			uiProps!!.inputFps.value = resultStat.framerate
+			//
 			uiProps!!.ctrlShowGrid.value = resultStat.procGrid?.show ?: false
 			//
 			when (resultStat.availOutputCams) {
@@ -103,7 +106,11 @@ class ApiClientFncs(serverUrl: String = "", apiKey: String = "") {
 		}
 
 		task.setOnFailed { _ ->  // we're on the JavaFX application thread here
-			uiProps!!.statusMsg.set("Exception calling DefaultApi#getStatus: ${task.getException().message}")
+			if (task.getException().javaClass.name == SocketException::class.java.name) {
+				uiProps!!.apiClientLostConnection.value = true
+			} else {
+				uiProps!!.statusMsg.set("Exception calling DefaultApi#getStatus: ${task.getException().message}")
+			}
 		}
 
 		Thread(task).start()

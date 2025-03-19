@@ -9,13 +9,10 @@ import javafx.scene.layout.BorderPane
 import javafx.stage.Stage
 import javafx.stage.WindowEvent
 import org.kordamp.bootstrapfx.BootstrapFX
-import org.opencv.core.Core
 
 
 class ClientApplication : Application() {
 	override fun start(primaryStage: Stage) {
-		loadOpenCvLib()
-
 		try {
 			// load the FXML resource
 			val loader = FXMLLoader(ClientApplication::class.java.getResource("ClientUi.fxml"))
@@ -65,44 +62,6 @@ class ClientApplication : Application() {
 			}
 		} catch (e: Exception) {
 			e.printStackTrace()
-		}
-	}
-
-	/**
-	 * Load the native OpenCV library
-	 */
-	@Throws(UnsatisfiedLinkError::class)
-	private fun loadOpenCvLib() {
-		fun loadOne(libName: String): Boolean {
-			try {
-				//println("Trying to load '${libName}'")
-				System.loadLibrary(libName)
-				//println("Successfully loaded lib '${libName}'")
-			} catch (ex: UnsatisfiedLinkError) {
-				//println("Failed to load lib '${libName}'")
-				return false
-			}
-			return true
-		}
-
-		val tmpOpenCvLibNameNoVers = Core.NATIVE_LIBRARY_NAME
-				.replace(Core.VERSION.replace(".", ""), "")
-
-		println("Loading OpenCV lib")
-		var resB = loadOne(tmpOpenCvLibNameNoVers)
-		if (! resB) {
-			val tmpOpenCvLibName490 = "${tmpOpenCvLibNameNoVers}490"
-			resB = loadOne(tmpOpenCvLibName490)
-		}
-		if (! resB) {
-			val tmpOpenCvLibName460 = "${tmpOpenCvLibNameNoVers}460"
-			resB = loadOne(tmpOpenCvLibName460)
-		}
-		if (! resB) {
-			resB = loadOne(Core.NATIVE_LIBRARY_NAME)
-		}
-		if (! resB) {
-			throw UnsatisfiedLinkError("Failed to load OpenCV lib")
 		}
 	}
 }

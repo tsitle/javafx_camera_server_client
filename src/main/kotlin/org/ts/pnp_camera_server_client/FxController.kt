@@ -2,6 +2,7 @@ package org.ts.pnp_camera_server_client
 
 import javafx.application.Platform
 import javafx.concurrent.Task
+import javafx.embed.swing.SwingFXUtils
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.control.*
@@ -13,15 +14,16 @@ import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.BorderPane
 import org.openapitools.client.apis.DefaultApi
 import org.openapitools.client.models.StatusCams
-import org.opencv.core.Core
-import org.opencv.core.Mat
-import org.opencv.core.Size
-import org.opencv.imgproc.Imgproc
-import org.opencv.videoio.VideoCapture
-import org.ts.pnp_camera_server_client.utils.Utils
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
+import org.ts.pnp_camera_server_client.mjpeg_stream.MjpegStream
+import org.ts.pnp_camera_server_client.mjpeg_stream.MjpegViewer
+import java.awt.AlphaComposite
+import java.awt.Color
+import java.awt.Graphics2D
+import java.awt.RenderingHints
+import java.awt.image.BufferedImage
+import java.io.ByteArrayInputStream
+import java.util.*
+import javax.imageio.ImageIO
 import kotlin.math.round
 import kotlin.random.Random
 
@@ -31,7 +33,25 @@ fun Double.format(digits: Int) = "%.${digits}f".format(this)
 data class AreaSize(val w: Int, val h: Int)
 
 
-open class FxController {
+open class FxController : MjpegViewer {
+	// output width of the camera image
+	private val cameraOutputWidth: Int = 800
+
+	/**
+	 * Output FPS (frames per second) of camera stream.
+	 * If the value is higher than what the MJPEG stream provides it won't make any difference.
+	 * But if the value is lower than what the MJPEG stream provides it will reduce CPU load.
+	 */
+	private val cameraOutputFps: Int = 25
+
+	// output a new frame every x ms
+	private val cameraOutputTimeoutMs = round(1000.0 / cameraOutputFps.toDouble()).toLong()
+
+	// add timestamp to camera image?
+	private val cameraAddTimestamp: Boolean = false
+
+	// ------------------------------------------------------------------------
+
 	@FXML
 	private lateinit var conConnectBtn: Button
 	@FXML
@@ -65,26 +85,16 @@ open class FxController {
 	@FXML
 	private lateinit var bncContrSlid: Slider
 
-	// a timer for acquiring the video stream
-	private var timerFrames: ScheduledExecutorService? = null
+	// ------------------------------------------------------------------------
 
 	// flag for stopping the 'get server status' thread
 	private var doKillThreadStatus = false
 
-	// the OpenCV object that realizes the video capture
-	private var capture: VideoCapture? = null
+	// the MJPEG stream decoder
+	private var capture: MjpegStream = MjpegStream()
 
 	// width to height ratio of the camera image
 	private var cameraRatio = -1.0
-
-	// output width of the camera image
-	private val cameraOutputWidth: Int = 600
-
-	// output FPS (frames per second) of camera stream
-	private val cameraOutputFps: Int = 24
-
-	// convert the output image to grayscale?
-	private val cameraToGray: Boolean = false
 
 	// observable properties
 	private val uiProps =  UiPropsContainer()
@@ -104,16 +114,21 @@ open class FxController {
 	// last value of Slider "B&C: Contrast"
 	private var lastBncContrVal = 0
 
+	private var lastFrameOutputTime: Long = -1
+	private var avgOutputTime: Long = 0
+	private var avgOutputCounter: Int = 0
+	private var scaledBufImg: BufferedImage? = null
+	private var scaledGraph2d: Graphics2D? = null
+	private var lastCameraOutputHeight = -1
+
+	// -----------------------------------------------------------------------------------------------------------------
+
 	/**
 	 * Initialize UI controller
 	 */
 	@FXML
 	protected fun initialize() {
 		initUiPropHandling()
-
-		//
-		this.capture = VideoCapture()
-		this.timerFrames = Executors.newSingleThreadScheduledExecutor()
 
 		// start the 'get server status' thread
 		val threadStatus = Thread(runnerGetServerStatusThread())
@@ -130,6 +145,11 @@ open class FxController {
 	 * Initialize uiProps handling
 	 */
 	private fun initUiPropHandling() {
+		uiProps.apiClientLostConnection.subscribe { it -> if (it) {
+			connectionLost = true
+		}}
+
+		//
 		uiProps.clientId.subscribe { it -> if (obsPropsPrintlnAllowed && ! doKillThreadStatus) {
 			println("Client ID: ${it.toInt()}")
 		}}
@@ -142,13 +162,15 @@ open class FxController {
 		}}
 
 		//
-		uiProps.ctrlShowGrid.subscribe { it -> if (obsPropsPrintlnAllowed && ! doKillThreadStatus) {
-			println("Show Grid: $it")
+		uiProps.ctrlShowGrid.subscribe { it -> if (! doKillThreadStatus) {
+			if (obsPropsPrintlnAllowed) {
+				println("Show Grid: $it")
+			}
 			ctrlShowGridCbx.isSelected = it
 		}}
 
 		//
-		uiProps.connectionOpen.subscribe { it -> if (obsPropsPrintlnAllowed && ! doKillThreadStatus) {
+		uiProps.connectionOpen.subscribe { it -> if (! doKillThreadStatus) {
 			conConnectBtn.styleClass.removeAll("btn-danger", "btn-default", "btn-success")
 			conConnectBtn.styleClass.add(if (it) "btn-danger" else "btn-success")
 			conConnectBtn.text = (if (it) "Disconnect" else "Connect")
@@ -309,75 +331,17 @@ open class FxController {
 			if (++readStatusTo == 10 && ! doKillThreadStatus) {
 				if (connectionLost) {
 					Platform.runLater {
+						uiProps.apiClientLostConnection.value = false
 						uiProps.connectionOpen.value = false
 						uiProps.statusMsg.value = "Connection lost"
 					}
-					connectionLost = false
-				} else if (capture?.isOpened == true) {
+				} else if (capture.isOpened) {
 					apiClientFncs?.getServerStatus(true)
 				}
 				readStatusTo = 0
 			}
 		}
 		println("ending threadStatus")
-	}
-
-	/**
-	 * Get a frame from the opened video stream (if any)
-	 *
-	 * @return the [Mat] to show
-	 */
-	private fun grabFrame(): Mat {
-		var frame = Mat()
-
-		// check if the capture is open
-		if (capture?.isOpened == true) {
-			try {
-				// read the current frame
-				val tmpRes = capture?.read(frame) ?: false
-				if (! tmpRes) {
-					connectionLost = true
-					capture?.release()
-				}
-
-				// if the frame is not empty, process it
-				if (tmpRes && ! frame.empty()) {
-					if (cameraToGray) {
-						Imgproc.cvtColor(frame, frame, Imgproc.COLOR_BGR2GRAY)
-					}
-
-					val lastCameraRatio = cameraRatio
-
-					// scale the image
-					val orgWidth = frame.width()
-					val orgHeight = frame.height()
-					cameraRatio = orgWidth.toDouble() / orgHeight.toDouble()
-					val resizedFrame = Mat()
-					val sz = Size(cameraOutputWidth.toDouble(), cameraOutputWidth.toDouble() / cameraRatio)
-					Imgproc.resize(frame, resizedFrame, sz)
-					frame = resizedFrame
-
-					// update
-					if (cameraRatio > 0.0 && lastCameraRatio != cameraRatio && imageAnchorPane.width > 0.0) {
-						updateWindowSize(imageAnchorPane.width.toInt(), imageAnchorPane.height.toInt() + bottomAnchorPane.height.toInt())
-					}
-				}
-			} catch (e: Exception) {
-				System.err.println("Exception during image processing: $e")
-			}
-		}
-
-		return frame
-	}
-
-	/**
-	 * Update the [ImageView] in the JavaFX main thread
-	 *
-	 * @param view the [ImageView] to update
-	 * @param image the [Image] to show
-	 */
-	private fun updateImageView(view: ImageView, image: Image) {
-		Utils.onFXThread(view.imageProperty(), image)
 	}
 
 	/**
@@ -467,13 +431,17 @@ open class FxController {
 		}
 
 		//
+		val that = this
 		val task: Task<Boolean> = object : Task<Boolean>() {
 			@Throws(java.lang.Exception::class)
 			override fun call(): Boolean {
 				// start the video capture
-				capture?.open("${serverUrlTxtfld.text}/stream.mjpeg?cid=${uiProps.clientId.value}")
+				capture.openStream(
+						that,
+						"${serverUrlTxtfld.text}/stream.mjpeg?cid=${uiProps.clientId.value}"
+					)
 
-				return (capture?.isOpened == true)  // is the video stream available?
+				return (capture.isOpened)  // is the video stream available?
 			}
 		}
 
@@ -481,34 +449,12 @@ open class FxController {
 			val result: Boolean = task.getValue()
 			if (result) {
 				obsPropsPrintlnAllowed = true
-				//
-				uiProps.connectionOpen.value = true
-
-				// grab a frame every x ms (== 1000 / y frames/sec)
-				val frameGrabber = Runnable {  // effectively grab and process a single frame
-					val frame = grabFrame()
-					// convert and show the frame
-					val imageToShow: Image? = Utils.mat2Image(frame)
-					updateImageView(currentFrame, imageToShow!!)
-				}
-
-				if (this.timerFrames?.isShutdown == true) {
-					this.timerFrames = Executors.newSingleThreadScheduledExecutor()
-				}
-				this.timerFrames?.scheduleAtFixedRate(
-						frameGrabber,
-						0,
-						round(1000.0 / cameraOutputFps.toDouble()).toLong(),
-						TimeUnit.MILLISECONDS
-					)
-
 				// update UI
+				uiProps.connectionOpen.value = true
 				uiProps.statusMsg.set("Connected")
 			} else {
 				// update UI
-				val errMsg = "Could not open server connection"
-				System.err.println(errMsg)
-				uiProps.statusMsg.set(errMsg)
+				uiProps.statusMsg.set("Could not open server connection")
 				serverUrlTxtfld.isDisable = false
 				serverApiKeyTxtfld.isDisable = false
 			}
@@ -517,7 +463,11 @@ open class FxController {
 		}
 
 		task.setOnFailed { _ ->  // we're on the JavaFX application thread here
+			// update UI
 			uiProps.statusMsg.value = "Error: ${task.getException().message}"
+			serverUrlTxtfld.isDisable = false
+			serverApiKeyTxtfld.isDisable = false
+			conConnectBtn.isDisable = false
 		}
 
 		//
@@ -529,6 +479,13 @@ open class FxController {
 		// update UI
 		uiProps.statusMsg.set("Connecting to '${serverUrlTxtfld.text}'...")
 		//
+		connectionLost = false
+		uiProps.apiClientLostConnection.value = false
+		// reset output FPS data
+		lastFrameOutputTime = -1
+		avgOutputTime = 0
+		avgOutputCounter = 0
+		//
 		Thread(task).start()
 	}
 
@@ -536,43 +493,117 @@ open class FxController {
 	 * Close server connection
 	 */
 	private fun connectionClose() {
-		val that = this
-		val task: Task<Boolean> = object : Task<Boolean>() {
-			override fun call(): Boolean {
-				if (that.timerFrames != null && ! that.timerFrames!!.isShutdown) {
-					try {
-						// stop the timer
-						that.timerFrames!!.shutdown()
-						var cnt = 0
-						while (! that.timerFrames!!.awaitTermination(500, TimeUnit.MILLISECONDS)) {
-							System.err.println("TimerFrames still active")
-							if (++cnt == 10) {
-								System.err.println("Ignoring timer (this might crash the application)")
-								break
-							}
-						}
-					} catch (ex: InterruptedException) {
-						System.err.println("Exception in stopping the frame capture: ${ex.message}")
-					}
-				}
-
-				if (capture?.isOpened == true) {
-					// release the camera
-					capture?.release()
-				}
-
-				return true
-			}
-		}
-
 		// the camera is not active at this point
 		uiProps.connectionOpen.value = false
 		// update UI
 		uiProps.statusMsg.set("Disconnected")
 		conConnectBtn.isDisable = false
 		//
-		Thread(task).start()
+		capture.closeStream()
 	}
+
+	/**
+	 * Adds a timestamp to the image
+	 */
+	private fun addTimestampToFrame(frame: BufferedImage) {
+		val g2d = frame.graphics.create() as Graphics2D
+		try {
+			g2d.color = Color.WHITE
+			g2d.drawString(Date().toString(), 10, frame.height - 50)
+		} finally {
+			g2d.dispose()
+		}
+	}
+
+	// -----------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Update the [ImageView] with the last received camera image
+	 *
+	 * @param rawByteArrayInputStream Raw image data
+	 */
+	override fun mjpegSetRawImageData(rawByteArrayInputStream: ByteArrayInputStream) {
+		val timeNow: Long = System.currentTimeMillis()
+		val timeDelta: Long = (if (timeNow >= lastFrameOutputTime) {timeNow - lastFrameOutputTime} else {lastFrameOutputTime - timeNow})
+		if (lastFrameOutputTime > 0 && timeDelta + 15 < cameraOutputTimeoutMs) {
+			return
+		}
+		if (lastFrameOutputTime > 0) {
+			avgOutputTime += timeDelta
+			if (++avgOutputCounter == cameraOutputFps * 10) {  // output every 10s
+				val tmpAvg = avgOutputTime.toDouble() / avgOutputCounter.toDouble()
+				println(
+						"Output: ${
+							(1000.0 / tmpAvg).format(1)
+						} fps (target=${cameraOutputFps.toDouble().format(1)}, input=${uiProps.inputFps.value})"
+					)
+				avgOutputCounter = 0
+				avgOutputTime = 0
+			}
+		}
+
+		//
+		val lastCameraRatio = cameraRatio
+		val fxImg: Image
+		val image: BufferedImage = ImageIO.read(rawByteArrayInputStream)
+
+		if (cameraAddTimestamp) {
+			addTimestampToFrame(image)
+		}
+
+		cameraRatio = image.width.toDouble() / image.height.toDouble()
+
+		// scale the image to a fixed width
+		if (cameraOutputWidth != image.width) {
+			val scaledWidth = cameraOutputWidth
+			val scaledHeight = (cameraOutputWidth.toDouble() / cameraRatio).toInt()
+			// scale with high quality settings
+			if (lastCameraOutputHeight != scaledHeight || scaledBufImg == null) {
+				lastCameraOutputHeight = scaledHeight
+				//
+				if (scaledGraph2d != null) {
+					scaledGraph2d?.dispose()
+				}
+				if (scaledBufImg != null) {
+					scaledBufImg?.flush()
+				}
+				scaledBufImg = BufferedImage(scaledWidth, scaledHeight, image.type)
+				scaledGraph2d = scaledBufImg!!.createGraphics()
+				scaledGraph2d?.composite = AlphaComposite.Src
+				scaledGraph2d?.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+				scaledGraph2d?.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
+				scaledGraph2d?.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+			}
+			scaledGraph2d?.drawImage(image, 0, 0, scaledWidth, scaledHeight, null)
+
+			// convert BufferedImage to JavaFX Image
+			fxImg = SwingFXUtils.toFXImage(scaledBufImg!!, null)
+		} else {
+			// convert BufferedImage to JavaFX Image
+			fxImg = SwingFXUtils.toFXImage(image, null)
+		}
+
+		Platform.runLater {
+			// update window size due to [cameraRatio]
+			if (cameraRatio > 0.0 && lastCameraRatio != cameraRatio && imageAnchorPane.width > 0.0) {
+				updateWindowSize(imageAnchorPane.width.toInt(), imageAnchorPane.height.toInt() + bottomAnchorPane.height.toInt())
+			}
+			// output the new image
+			currentFrame.imageProperty().set(fxImg)
+			//
+			lastFrameOutputTime = System.currentTimeMillis()
+		}
+	}
+
+	override fun mjpegLogError(msg: String) {
+		System.err.println("MjpegStream Error: $msg")
+	}
+
+	override fun mjpegLostConnection() {
+		connectionLost = true
+	}
+
+	// -----------------------------------------------------------------------------------------------------------------
 
 	/**
 	 * Event: Button "Connection: Connect" pressed
