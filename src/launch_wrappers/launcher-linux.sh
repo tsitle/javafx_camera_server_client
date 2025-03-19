@@ -89,27 +89,6 @@ fi
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-LVAR_JAVA_LIB_PATH_CUSTOM="lib_opencv-${LCFG_OS_TYPE}-${LVAR_ARCH}"
-LVAR_JAVA_LIB_PATH_RH="/usr/lib/java"
-LVAR_JAVA_LIB_PATH_DEB="/usr/lib/jni"
-
-TMP_JAVA_LIB_PATH="${LVAR_JAVA_LIB_PATH_CUSTOM}"
-if [ ! -d "${TMP_JAVA_LIB_PATH}" ]; then
-	TMP_JAVA_LIB_PATH="${LVAR_JAVA_LIB_PATH_RH}"
-	if [ ! -d "${TMP_JAVA_LIB_PATH}" ]; then
-		TMP_JAVA_LIB_PATH="${LVAR_JAVA_LIB_PATH_DEB}"
-		if [ ! -d "${TMP_JAVA_LIB_PATH}" ]; then
-			{
-				echo "Error: Could not find Java library path"
-				echo -e "\nTried:"
-				echo "  ${LVAR_JAVA_LIB_PATH_CUSTOM}/"
-				echo "  ${LVAR_JAVA_LIB_PATH_RH}/"
-				echo "  ${LVAR_JAVA_LIB_PATH_DEB}/"
-			} >> /dev/stderr
-			exit 1
-		fi
-	fi
-fi
-export JAVA_OPTS="-Djava.library.path=${TMP_JAVA_LIB_PATH} --module-path lib --add-modules=javafx.controls,javafx.fxml"
+export JAVA_OPTS="--module-path lib --add-modules=javafx.controls,javafx.fxml"
 
 ./bin/pnp_camera_server_client

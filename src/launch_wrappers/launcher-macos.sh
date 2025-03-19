@@ -96,29 +96,6 @@ fi
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-if ! command -v ffmpeg >/dev/null 2>&1; then
-	echo "Error: Could not find ffmpeg executable" >>/dev/stderr
-	exit 1
-fi
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-LVAR_JAVA_LIB_PATH_CUSTOM="lib_opencv-${LCFG_OS_TYPE}-${LVAR_ARCH}"
-LVAR_JAVA_LIB_PATH_BREW="/usr/local/opt/opencv/share/java/opencv4"
-
-TMP_JAVA_LIB_PATH="${LVAR_JAVA_LIB_PATH_CUSTOM}"
-if [ ! -d "${TMP_JAVA_LIB_PATH}" ]; then
-	TMP_JAVA_LIB_PATH="${LVAR_JAVA_LIB_PATH_BREW}"
-	if [ ! -d "${TMP_JAVA_LIB_PATH}" ]; then
-		{
-			echo "Error: Could not find Java library path"
-			echo -e "\nTried:"
-			echo "  ${LVAR_JAVA_LIB_PATH_CUSTOM}/"
-			echo "  ${LVAR_JAVA_LIB_PATH_BREW}/"
-		} >> /dev/stderr
-		exit 1
-	fi
-fi
-export JAVA_OPTS="-Djava.library.path=${TMP_JAVA_LIB_PATH} --module-path lib --add-modules=javafx.controls,javafx.fxml"
+export JAVA_OPTS="--module-path lib --add-modules=javafx.controls,javafx.fxml"
 
 ./bin/pnp_camera_server_client
