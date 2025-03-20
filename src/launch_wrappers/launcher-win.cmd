@@ -31,4 +31,4 @@ set LVAR_ARCH=x64
 
 set JAVA_OPTS=--module-path lib --add-modules=javafx.controls,javafx.fxml
 
-call bin\pnp_camera_server_client.bat
+call bin\javafx_camera_server_client.bat

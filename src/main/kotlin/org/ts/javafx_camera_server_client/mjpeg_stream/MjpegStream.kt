@@ -2,7 +2,7 @@
  * Based on
  *   https://raw.githubusercontent.com/andrealaforgia/mjpeg-client/refs/heads/master/src/main/java/com/andrealaforgia/mjpegclient/MjpegRunner.java
  */
-package org.ts.pnp_camera_server_client.mjpeg_stream
+package org.ts.javafx_camera_server_client.mjpeg_stream
 
 import java.io.ByteArrayInputStream
 import java.io.IOException

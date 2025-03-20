@@ -91,4 +91,4 @@ fi
 
 export JAVA_OPTS="--module-path lib --add-modules=javafx.controls,javafx.fxml"
 
-./bin/pnp_camera_server_client
+./bin/javafx_camera_server_client

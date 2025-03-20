@@ -1,4 +1,4 @@
-package org.ts.pnp_camera_server_client
+package org.ts.javafx_camera_server_client
 
 import javafx.application.Platform
 import javafx.concurrent.Task
@@ -14,8 +14,8 @@ import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.BorderPane
 import org.openapitools.client.apis.DefaultApi
 import org.openapitools.client.models.StatusCams
-import org.ts.pnp_camera_server_client.mjpeg_stream.MjpegStream
-import org.ts.pnp_camera_server_client.mjpeg_stream.MjpegViewer
+import org.ts.javafx_camera_server_client.mjpeg_stream.MjpegStream
+import org.ts.javafx_camera_server_client.mjpeg_stream.MjpegViewer
 import java.awt.AlphaComposite
 import java.awt.Color
 import java.awt.Graphics2D

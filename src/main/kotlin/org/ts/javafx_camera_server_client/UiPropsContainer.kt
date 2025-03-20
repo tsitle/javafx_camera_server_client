@@ -1,4 +1,4 @@
-package org.ts.pnp_camera_server_client
+package org.ts.javafx_camera_server_client
 
 import javafx.beans.property.*
 

@@ -1,4 +1,4 @@
-package org.ts.pnp_camera_server_client.mjpeg_stream
+package org.ts.javafx_camera_server_client.mjpeg_stream
 
 import java.io.ByteArrayInputStream
 

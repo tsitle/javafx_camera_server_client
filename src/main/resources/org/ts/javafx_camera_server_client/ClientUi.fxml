@@ -19,7 +19,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.ts.pnp_camera_server_client.FxController">
+<BorderPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.ts.javafx_camera_server_client.FxController">
    <center>
       <AnchorPane fx:id="imageAnchorPane" style="-fx-background-color: yellow;" BorderPane.alignment="CENTER">
          <children>

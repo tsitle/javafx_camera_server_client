@@ -47,7 +47,7 @@ tasks.compileJava.configure {
 }
 
 application {
-	mainClass = "org.ts.pnp_camera_server_client.ClientApplication"
+	mainClass = "org.ts.javafx_camera_server_client.ClientApplication"
 	applicationDefaultJvmArgs += "-DappVersion=${version}"
 }
 
