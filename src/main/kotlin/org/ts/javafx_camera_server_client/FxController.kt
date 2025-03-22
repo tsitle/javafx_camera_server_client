@@ -542,6 +542,9 @@ open class FxController : MjpegViewer {
 	 * Draw over the camera image in [currentFrame] to show that the connection has been closed
 	 */
 	private fun drawConnectionClosedOverFrame() {
+		if (currentFrame.image == null) {
+			return
+		}
 		val bufImg: BufferedImage = SwingFXUtils.fromFXImage(currentFrame.image, null)
 		val g2d = bufImg.createGraphics()
 		try {
