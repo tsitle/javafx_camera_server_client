@@ -121,7 +121,7 @@ dependencies {
 
 distributions {
 	main {
-		distributionBaseName = "${tmpProjName}-${osName}"
+		distributionBaseName = "${tmpProjName}-${osName}"  // the version will autom. be appended
 
 		contents {
 			if (osName == "win") {
