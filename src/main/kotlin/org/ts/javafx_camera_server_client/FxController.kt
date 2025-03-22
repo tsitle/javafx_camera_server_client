@@ -6,6 +6,9 @@ import javafx.embed.swing.SwingFXUtils
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.control.*
+import javafx.scene.control.Button
+import javafx.scene.control.Label
+import javafx.scene.control.TextField
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.KeyEvent
@@ -16,12 +19,14 @@ import org.openapitools.client.apis.DefaultApi
 import org.openapitools.client.models.StatusCams
 import org.ts.javafx_camera_server_client.mjpeg_stream.MjpegStream
 import org.ts.javafx_camera_server_client.mjpeg_stream.MjpegViewer
-import java.awt.AlphaComposite
-import java.awt.Color
-import java.awt.Graphics2D
-import java.awt.RenderingHints
+import java.awt.*
+import java.awt.font.GlyphVector
+import java.awt.geom.Rectangle2D
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
+import java.net.ConnectException
+import java.net.MalformedURLException
+import java.net.UnknownHostException
 import java.util.*
 import javax.imageio.ImageIO
 import kotlin.math.round
@@ -105,9 +110,6 @@ open class FxController : MjpegViewer {
 	// are the ObservableProperty listeners allowed to output to the console already?
 	private var obsPropsPrintlnAllowed = false
 
-	// has the server connection been lost?
-	private var connectionLost = false
-
 	// last value of Slider "B&C: Brightness"
 	private var lastBncBrightnVal = 0
 
@@ -158,7 +160,12 @@ open class FxController : MjpegViewer {
 	 */
 	private fun initUiPropHandling() {
 		uiProps.apiClientLostConnection.subscribe { it -> if (it) {
-			connectionLost = true
+			Platform.runLater {
+				uiProps.connectionOpen.value = false
+				uiProps.statusMsg.value = "Connection lost"
+				//
+				connectionClose()
+			}
 		}}
 
 		//
@@ -341,13 +348,7 @@ open class FxController : MjpegViewer {
 				break
 			}
 			if (++readStatusTo == 10 && ! doKillThreadStatus) {
-				if (connectionLost) {
-					Platform.runLater {
-						uiProps.apiClientLostConnection.value = false
-						uiProps.connectionOpen.value = false
-						uiProps.statusMsg.value = "Connection lost"
-					}
-				} else if (capture.isOpened) {
+				if (! uiProps.apiClientLostConnection.value && capture.isOpened) {
 					apiClientFncs?.getServerStatus(true)
 				}
 				readStatusTo = 0
@@ -476,7 +477,14 @@ open class FxController : MjpegViewer {
 
 		task.setOnFailed { _ ->  // we're on the JavaFX application thread here
 			// update UI
-			uiProps.statusMsg.value = "Error: ${task.getException().message}"
+			val errMsg: String = when (val tmpEx = task.exception) {
+				is UnknownHostException -> "Unknown host"
+				is ConnectException ->  "Could not connect to host"
+				is IllegalArgumentException -> "Illegal argument: ${tmpEx.message}"
+				is MalformedURLException -> "Malformed URL: ${tmpEx.message}"
+				else -> tmpEx.toString()
+			}
+			uiProps.statusMsg.value = "Error: $errMsg"
 			serverUrlTxtfld.isDisable = false
 			serverApiKeyTxtfld.isDisable = false
 			conConnectBtn.isDisable = false
@@ -491,7 +499,6 @@ open class FxController : MjpegViewer {
 		// update UI
 		uiProps.statusMsg.set("Connecting to '${serverUrlTxtfld.text}'...")
 		//
-		connectionLost = false
 		uiProps.apiClientLostConnection.value = false
 		// reset output FPS data
 		lastFrameOutputTime = -1
@@ -508,10 +515,14 @@ open class FxController : MjpegViewer {
 		// the camera is not active at this point
 		uiProps.connectionOpen.value = false
 		// update UI
-		uiProps.statusMsg.set("Disconnected")
+		if (! uiProps.apiClientLostConnection.value) {
+			uiProps.statusMsg.set("Disconnected")
+		}
 		conConnectBtn.isDisable = false
 		//
 		capture.closeStream()
+		//
+		drawConnectionClosedOverFrame()
 	}
 
 	/**
@@ -524,6 +535,63 @@ open class FxController : MjpegViewer {
 			g2d.drawString(Date().toString(), 10, frame.height - 50)
 		} finally {
 			g2d.dispose()
+		}
+	}
+
+	/**
+	 * Draw over the camera image in [currentFrame] to show that the connection has been closed
+	 */
+	private fun drawConnectionClosedOverFrame() {
+		val bufImg: BufferedImage = SwingFXUtils.fromFXImage(currentFrame.image, null)
+		val g2d = bufImg.createGraphics()
+		try {
+			g2d.color = Color.DARK_GRAY
+			g2d.composite = AlphaComposite.SrcOver.derive(0.8f)
+			g2d.fillRect(0, 0, bufImg.width, bufImg.height)
+			//
+			///
+			g2d.composite = AlphaComposite.SrcOver.derive(0.5f)
+			g2d.font = Font(Font.SANS_SERIF, Font.BOLD, 24)
+			val outpStr = "Connection " + (if (uiProps.apiClientLostConnection.value) "lost" else "closed")
+			///
+			/*
+			val fm: FontMetrics = g2d.fontMetrics
+			val stringWidth = fm.stringWidth(outpStr)
+			g2d.color = Color.PINK
+			g2d.drawString(outpStr, (bufImg.width / 2) - (stringWidth / 2), (bufImg.height / 2) + (fm.height / 2) - (fm.height / 2))
+			*/
+			///
+			/*
+			g2d.color = Color.CYAN
+			val charBounds: Rectangle2D = g2d.font.getStringBounds(outpStr, g2d.fontRenderContext)
+			g2d.drawRect(charBounds.x.toInt(), charBounds.y.toInt(), charBounds.width.toInt(), charBounds.height.toInt())
+			*/
+			///
+			val gv: GlyphVector = g2d.font.layoutGlyphVector(
+					g2d.fontRenderContext,
+					outpStr.toCharArray(),
+					0,
+					outpStr.length,
+					GlyphVector.FLAG_MASK
+				)
+			val bounds: Rectangle2D = gv.visualBounds
+			///
+			val ox = (bufImg.width / 2) - (bounds.width.toInt() / 2)
+			val oy = (bufImg.height / 2) + (bounds.height.toInt() / 2) - 2
+			g2d.color = Color.RED
+			g2d.drawString(outpStr, ox, oy)
+			///
+			/*
+			g2d.translate(ox, oy)
+			g2d.color = Color.ORANGE
+			g2d.drawRect(bounds.x.toInt(), bounds.y.toInt() - 2, bounds.width.toInt(), bounds.height.toInt() + 2)
+			*/
+		} finally {
+			g2d.dispose()
+		}
+		val fxImg: Image = SwingFXUtils.toFXImage(bufImg, null)
+		Platform.runLater {
+			currentFrame.imageProperty().set(fxImg)
 		}
 	}
 
@@ -612,7 +680,7 @@ open class FxController : MjpegViewer {
 	}
 
 	override fun mjpegLostConnection() {
-		connectionLost = true
+		uiProps.apiClientLostConnection.value = true
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
