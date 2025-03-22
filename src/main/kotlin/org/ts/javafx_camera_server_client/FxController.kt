@@ -128,6 +128,18 @@ open class FxController : MjpegViewer {
 	 */
 	@FXML
 	protected fun initialize() {
+		// get Server URL from env
+		val tmpServerUrl = System.getenv("serverUrl") ?: ""
+		if (tmpServerUrl.isNotEmpty()) {
+			serverUrlTxtfld.text = tmpServerUrl
+		}
+		// get Server API Key Hash from env
+		val tmpServerApiKeyHash = System.getenv("serverApiKeyHash") ?: ""
+		if (tmpServerApiKeyHash.isNotEmpty()) {
+			serverApiKeyTxtfld.text = tmpServerApiKeyHash
+		}
+
+		//
 		initUiPropHandling()
 
 		// start the 'get server status' thread
@@ -136,7 +148,7 @@ open class FxController : MjpegViewer {
 		threadStatus.start()
 
 		// load camera stream
-		if (serverUrlTxtfld.text.isNotEmpty() && serverApiKeyTxtfld.text.isNotEmpty()) {
+		if (tmpServerUrl.isNotEmpty() && serverApiKeyTxtfld.text.isNotEmpty()) {
 			conConnectBtn.fire()
 		}
 	}
