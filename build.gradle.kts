@@ -81,6 +81,7 @@ tasks.compileJava.configure {
 application {
 	mainClass = "org.ts.javafx_camera_server_client.ClientApplication"
 	applicationDefaultJvmArgs += "-DappVersion=${version}"
+	//applicationDefaultJvmArgs += "-Djdk.gtk.version=2"  // starting JavaFX 11 GTK 3 is the default
 }
 
 java {
@@ -196,6 +197,8 @@ runtime {
 		///
 		if (osName == "macos") {
 			tmpImageOptions.addAll(listOf("--mac-package-identifier", project.findProperty("macosPackageId")!! as String))
+		} else if (osName == "linux") {
+			resourceDir = File("src/main/resources/jpackage")
 		}
 		///
 		when (installerType) {
