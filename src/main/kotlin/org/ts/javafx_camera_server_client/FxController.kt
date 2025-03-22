@@ -131,12 +131,12 @@ open class FxController : MjpegViewer {
 	@FXML
 	protected fun initialize() {
 		// get Server URL from env
-		val tmpServerUrl = System.getenv("serverUrl") ?: ""
+		val tmpServerUrl = System.getenv("JFXCSC_SERVERURL") ?: ""
 		if (tmpServerUrl.isNotEmpty()) {
 			serverUrlTxtfld.text = tmpServerUrl
 		}
 		// get Server API Key Hash from env
-		val tmpServerApiKeyHash = System.getenv("serverApiKeyHash") ?: ""
+		val tmpServerApiKeyHash = System.getenv("JFXCSC_SERVERAPIKEYHASH") ?: ""
 		if (tmpServerApiKeyHash.isNotEmpty()) {
 			serverApiKeyTxtfld.text = tmpServerApiKeyHash
 		}
