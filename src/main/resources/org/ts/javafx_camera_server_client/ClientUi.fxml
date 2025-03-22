@@ -79,7 +79,7 @@
                                                       <Insets right="5.0" />
                                                    </padding>
                                                 </Label>
-                                                <TextField fx:id="serverUrlTxtfld" text="http://rpi5pnp:8090" GridPane.columnIndex="1">
+                                                <TextField fx:id="serverUrlTxtfld" text="http://your_hostname_or_ip:8090" GridPane.columnIndex="1">
                                                    <tooltip>
                                                       <Tooltip text="e.g. &quot;http://your_hostname_or_ip:8090&quot;" />
                                                    </tooltip></TextField>
