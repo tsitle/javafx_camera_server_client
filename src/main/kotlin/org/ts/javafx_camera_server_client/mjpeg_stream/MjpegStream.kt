@@ -59,7 +59,7 @@ class MjpegStream {
 	fun closeStream() {
 		isOpened = false
 		try {
-			urlStream!!.close()
+			urlStream?.close()
 		} catch (ex: IOException) {
 			System.err.println("MjpegStream.closeStream(): Failed to close stream: $ex")
 		}
