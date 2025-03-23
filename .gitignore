@@ -11,6 +11,9 @@ docs/notes.md
 build.gradle--*
 build.gradle.kts--*
 
+/dist/
+/distPre/
+
 .gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
@@ -44,7 +47,6 @@ bin/
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/dist/
 /nbdist/
 /.nb-gradle/
 
