@@ -21,12 +21,6 @@ version = "${project.findProperty("appVersion")}"  // read 'appVersion' from 'gr
 
 println("Client app version: $version")
 
-// get value of property 'rootProject' from 'settings.gradle' file
-val tmpPropProj = project.findProperty("rootProject")!! as org.gradle.api.internal.project.DefaultProject
-val tmpProjName = tmpPropProj.project!!.name  // tmpPropProj.project is actually nullable (Gradle 8.10)
-// read 'appImageName' from 'gradle.properties'
-val tmpAppImageName = project.findProperty("appImageName")!! as String
-
 // ---------------------------------------------------------------------------------------------------------------------
 
 fun getOperatingSystemName(): String {
@@ -71,6 +65,30 @@ if (osName == "win" && cpuArch != "x64") {
 val lxDistroType: String = getLinuxDistroType()
 
 println("Host: ${osName}-${cpuArch}")
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+// get value of property 'rootProject' from 'settings.gradle' file
+val tmpPropProj = project.findProperty("rootProject")!! as org.gradle.api.internal.project.DefaultProject
+val propProjName = tmpPropProj.project!!.name  // tmpPropProj.project is actually nullable (Gradle 8.10)
+// read 'appImageName' from 'gradle.properties'
+val propAppImageName = project.findProperty("appImageName")!! as String
+
+// set installerType (can be set from command line: e.g. './gradlew jpackage -PinstallerType=msi')
+val propInstallerType = project.findProperty("installerType") as String? ?:
+	when (osName) {
+		"macos" -> "pkg"  // or dmg
+		"linux" -> { if (lxDistroType == "debian") "deb" else "rpm" }
+		else -> "exe"  // or msi
+	}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+// jpackage output directory
+val confJpackOutputDir = "${propProjName}-${osName}-${cpuArch}-${version}-pack-w_jre"  // default is 'jpackage/'
+
+// output directory for distribution files (launchers and installers)
+val confDistPreOutputDir = "distPre"
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -122,7 +140,7 @@ dependencies {
 
 distributions {
 	main {
-		distributionBaseName = "${tmpProjName}-${osName}"  // the version will autom. be appended
+		distributionBaseName = "${propProjName}-${osName}"  // the version will autom. be appended
 
 		contents {
 			if (osName == "win") {
@@ -146,8 +164,8 @@ runtime {
 			"javafx.swing",
 			"java.logging"  // for java.util.logging
 		))
-	imageDir.set(File(layout.buildDirectory.get().toString(), "${tmpProjName}-${osName}-${cpuArch}-${version}-launcher-w_jre"))  // default is 'image/'
-	imageZip.set(File(layout.buildDirectory.get().toString(), "${tmpProjName}-${osName}-${cpuArch}-${version}-launcher-w_jre.zip"))  // default is 'image.zip'
+	imageDir.set(File(layout.buildDirectory.get().toString(), "${propProjName}-${osName}-${cpuArch}-${version}-launcher-w_jre"))  // default is 'image/'
+	imageZip.set(File(layout.buildDirectory.get().toString(), "${propProjName}-${osName}-${cpuArch}-${version}-launcher-w_jre.zip"))  // default is 'image.zip'
 
 	jpackage {
 		installerOptions = listOf(
@@ -161,34 +179,26 @@ runtime {
 		imageName = when (osName) {
 				"macos" -> {
 					// on macOS results in e.g. 'JavaFX Camera Server Client-x64-1.2.app'
-					"${tmpAppImageName}-${cpuArch}-${version}"
+					"${propAppImageName}-${cpuArch}-${version}"
 				}
 				"linux" -> {
 					// on Linux results in e.g. 'javafx_camera_server_client-linux-x64-1.2'
-					//"${tmpProjName}-${osName}-${cpuArch}-${version}"
+					//"${propProjName}-${osName}-${cpuArch}-${version}"
 					// on Linux results in e.g. 'javafx_camera_server_client'
-					tmpProjName
+					propProjName
 				}
 				else -> {
 					// on Win results in e.g. 'JavaFX Camera Server Client'
-					tmpAppImageName
+					propAppImageName
 				}
 			}
+		installerType = propInstallerType
 		installerName = when (osName) {
-				"macos" -> "${tmpProjName}-${cpuArch}"  // version will be autom. appended - on macOS results in e.g. 'javafx_camera_server_client-x64-1.2.pkg'
-				"linux" -> tmpProjName  // version and cpuArch will be autom. appended - on Linux results in e.g. 'javafx_camera_server_client-1.2-1.x86_64.rpm'
-				else -> "${tmpProjName}-${cpuArch}-installer"  // version will be autom. appended - on Win results in e.g. 'javafx_camera_server_client-x64-installer-1.2.msi'
+				"macos" -> "${propProjName}-${cpuArch}"  // version will be autom. appended - on macOS results in e.g. 'javafx_camera_server_client-x64-1.2.pkg'
+				"linux" -> propProjName  // version and cpuArch will be autom. appended - on Linux results in e.g. 'javafx_camera_server_client-1.2-1.x86_64.rpm'
+				else -> "${propProjName}-${cpuArch}-installer"  // version will be autom. appended - on Win results in e.g. 'javafx_camera_server_client-x64-installer-1.2.msi'
 			}
-		outputDir = "${tmpProjName}-${osName}-${cpuArch}-${version}-pack-w_jre"  // default is 'jpackage/'
-
-		// set installerType (can be set from command line: e.g. './gradlew jpackage -PinstallerType=msi')
-		installerType = project.findProperty("installerType") as String? ?:
-				when (osName) {
-					"macos" -> "pkg"  // or dmg
-					"linux" -> { if (lxDistroType == "debian") "deb" else "rpm" }
-					else -> "exe"  // or msi
-				}
-		println("InstallerType: $installerType")
+		outputDir = confJpackOutputDir
 
 		//
 		///
@@ -198,7 +208,7 @@ runtime {
 		if (osName == "macos") {
 			tmpImageOptions.addAll(listOf("--mac-package-identifier", project.findProperty("macosPackageId")!! as String))
 		} else if (osName == "linux") {
-			resourceDir = File("src/main/resources/jpackage")
+			resourceDir = File("src/main/resources/jpackage-${lxDistroType}")
 		}
 		///
 		when (installerType) {
@@ -246,19 +256,370 @@ runtime {
 
 // org.beryx.runtime: Creates a zip archive of the custom runtime image
 tasks.runtimeZip {
+	doFirst {
+		if (osName != "win") {
+			throw Exception("Do not use 'runtimeZip' under macOS/Linux. Use 'distTar' instead")
+		}
+	}
+
+	doLast {
+		val tmpFileObjOrg: File = imageZip.asFile
+		if (! tmpFileObjOrg.exists()) {
+			throw Exception("File '${tmpFileObjOrg}' not found")
+		}
+		val tmpFileObjTrg = File(confDistPreOutputDir, tmpFileObjOrg.name)
+		println("Renaming '${tmpFileObjOrg}' to '${tmpFileObjTrg}'")
+		tmpFileObjOrg.renameTo(tmpFileObjTrg)
+	}
 }
 
 // org.beryx.runtime: Uses the jpackage tool to create a platform-specific application image
 tasks.jpackageImage {
 }
 
+tasks {
+	register<Copy>("jpackageImageTarZipPreCopy")
+	named<Copy>("jpackageImageTarZipPreCopy") {
+		dependsOn(":jpackageImage")
+
+		/*
+		 * We need to copy the app dir into a new subdir first,
+		 * otherwise the resulting TAR-ball might contain the installer as well
+		 */
+		val tmpAppDir = jpackageImage.get().jpackageData.imageName + (if (osName == "macos") ".app" else "")
+		val tmpSourceDirObj = File(layout.buildDirectory.dir(jpackageImage.get().jpackageData.outputDir).get().toString(), tmpAppDir)
+		val tmpPreCopyDir = layout.buildDirectory.dir("jpackageImageTarZipPreCopy").get().toString()
+		//println("Copying app image from '${tmpSourceDirObj}' to '${tmpPreCopyDir}/'...")
+		from(tmpSourceDirObj)
+		into(File(tmpPreCopyDir, tmpAppDir))
+	}
+
+	// --------------------------------------------------------
+
+	register<DefaultTask>("jpackageImageTarRename")
+	named<DefaultTask>("jpackageImageTarRename") {
+		dependsOn(":jpackageImageTarZipPreCopy")
+
+		doFirst {
+			if (osName == "win") {
+				throw Exception("Do not use 'jpackageImageTar' under MS Windows. Use 'jpackageImageZip' instead")
+			}
+		}
+
+		doLast {
+			if (osName == "linux") {
+				val tmpPreCopyDir = layout.buildDirectory.dir("jpackageImageTarZipPreCopy").get().toString()
+				val tmpBaseFilenTrg = "${propProjName}-${osName}-${cpuArch}-${version}-portable"
+
+				if (! File(tmpPreCopyDir, propProjName).exists()) {
+					throw Exception("Directory '${tmpPreCopyDir}/${propProjName}' does not exist")
+				}
+				if (! File(tmpPreCopyDir, propProjName).renameTo(
+							File(tmpPreCopyDir, tmpBaseFilenTrg)
+						)) {
+					throw Exception("Could not rename '${tmpPreCopyDir}/${propProjName}'")
+				}
+			}
+		}
+	}
+
+	register<Tar>("jpackageImageTarMain")
+	named<Tar>("jpackageImageTarMain") {
+		dependsOn(":jpackageImageTarRename")
+
+		doFirst {
+			if (osName == "win") {
+				throw Exception("Do not use 'jpackageImageTar' under MS Windows. Use 'jpackageImageZip' instead")
+			}
+		}
+
+		val tmpPreCopyDir = layout.buildDirectory.dir("jpackageImageTarZipPreCopy").get().toString()
+		val tmpBaseFilenTrg = "${propProjName}-${osName}-${cpuArch}-${version}-portable"
+		val tmpFilenTrg = "${tmpBaseFilenTrg}.tgz"
+		println("Creating '${confDistPreOutputDir}/${tmpFilenTrg}'...")
+		from(File(tmpPreCopyDir))
+		archiveFileName.set(tmpFilenTrg)
+		destinationDirectory.set(File(confDistPreOutputDir))
+		compression = Compression.GZIP
+	}
+
+	register<DefaultTask>("jpackageImageTarCleanUp")
+	named<DefaultTask>("jpackageImageTarCleanUp") {
+		dependsOn(":jpackageImageTarMain")
+
+		doFirst {
+			if (osName == "win") {
+				throw Exception("Do not use 'jpackageImageTar' under MS Windows. Use 'jpackageImageZip' instead")
+			}
+		}
+
+		doLast {
+			val tmpPreCopyDir = layout.buildDirectory.dir("jpackageImageTarZipPreCopy").get().toString()
+			if (! File(tmpPreCopyDir).exists()) {
+				throw Exception("Directory '${tmpPreCopyDir}' does not exist")
+			}
+			File(tmpPreCopyDir).deleteRecursively()
+		}
+	}
+
+	register<DefaultTask>("jpackageImageTar")
+	named<DefaultTask>("jpackageImageTar") {
+		dependsOn(":jpackageImageTarCleanUp")
+
+		doFirst {
+			if (osName == "win") {
+				throw Exception("Do not use 'jpackageImageTar' under MS Windows. Use 'jpackageImageZip' instead")
+			}
+		}
+	}
+
+	// --------------------------------------------------------
+
+	register<DefaultTask>("jpackageImageZipRename")
+	named<DefaultTask>("jpackageImageZipRename") {
+		dependsOn(":jpackageImageTarZipPreCopy")
+
+		doFirst {
+			if (osName != "win") {
+				throw Exception("Do not use 'jpackageImageZip' under macOS/Linux. Use 'jpackageImageTar' instead")
+			}
+		}
+
+		doLast {
+			val tmpPreCopyDir = layout.buildDirectory.dir("jpackageImageTarZipPreCopy").get().toString()
+			val tmpBaseFilenTrg = "${propProjName}-${osName}-${cpuArch}-${version}-portable"
+
+			if (! File(tmpPreCopyDir, propAppImageName).exists()) {
+				throw Exception("Directory '${tmpPreCopyDir}/${propAppImageName}' does not exist")
+			}
+			if (! File(tmpPreCopyDir, propAppImageName).renameTo(
+							File(tmpPreCopyDir, tmpBaseFilenTrg)
+					)) {
+				throw Exception("Could not rename '${tmpPreCopyDir}/${propAppImageName}'")
+			}
+		}
+	}
+
+	register<Zip>("jpackageImageZipMain")
+	named<Zip>("jpackageImageZipMain") {
+		dependsOn(":jpackageImageZipRename")
+
+		doFirst {
+			if (osName != "win") {
+				throw Exception("Do not use 'jpackageImageZip' under macOS/Linux. Use 'jpackageImageTar' instead")
+			}
+		}
+
+		val tmpPreCopyDir = layout.buildDirectory.dir("jpackageImageTarZipPreCopy").get().toString()
+		val tmpBaseFilenTrg = "${propProjName}-${osName}-${cpuArch}-${version}-portable"
+		val tmpFilenTrg = "${tmpBaseFilenTrg}.zip"
+		println("Creating '${confDistPreOutputDir}/${tmpFilenTrg}'...")
+		from(File(tmpPreCopyDir))
+		archiveFileName.set(tmpFilenTrg)
+		destinationDirectory.set(File(confDistPreOutputDir))
+	}
+
+	register<DefaultTask>("jpackageImageZipCleanUp")
+	named<DefaultTask>("jpackageImageZipCleanUp") {
+		dependsOn(":jpackageImageZipMain")
+
+		doFirst {
+			if (osName != "win") {
+				throw Exception("Do not use 'jpackageImageZip' under macOS/Linux. Use 'jpackageImageTar' instead")
+			}
+		}
+
+		doLast {
+			val tmpPreCopyDir = layout.buildDirectory.dir("jpackageImageTarZipPreCopy").get().toString()
+			if (! File(tmpPreCopyDir).exists()) {
+				throw Exception("Directory '${tmpPreCopyDir}' does not exist")
+			}
+			File(tmpPreCopyDir).deleteRecursively()
+		}
+	}
+
+	register<DefaultTask>("jpackageImageZip")
+	named<DefaultTask>("jpackageImageZip") {
+		dependsOn(":jpackageImageZipCleanUp")
+
+		doFirst {
+			if (osName != "win") {
+				throw Exception("Do not use 'jpackageImageZip' under macOS/Linux. Use 'jpackageImageTar' instead")
+			}
+		}
+	}
+}
+
 // org.beryx.runtime: Uses the jpackage tool to create a platform-specific application installer
 tasks.jpackage {
-	// Could be used for pre-checks;
-	// e.g., are certain command line arguments defined?
 	doFirst {
-		// project.findProperty("installerOs")
-		//    (example: -PinstallerOs=mac)
-		// project.getProperty("installerType")!!  // throws exception if its missing
+		//project.getProperty("installerType")!!  // throws exception if its missing
+
+		println("InstallerType: $propInstallerType")
+	}
+	doLast {
+		val tmpFilenOrg: String = when (osName) {
+				"macos" -> {
+					"${propProjName}-${cpuArch}-${version}.${propInstallerType}"
+				}
+				"linux" -> {
+					val tmpCpuArchDistro = when (propInstallerType) {
+							"rpm" -> when (cpuArch) {
+									"x64" -> "x86_64"
+									else -> "aarch64"  // @TODO
+								}
+							else -> when (cpuArch) {
+									"x64" -> "amd64"
+									else -> "arm64"
+								}
+						}
+					when (propInstallerType) {
+							"rpm" -> "${propProjName}-${version}-1.${tmpCpuArchDistro}.${propInstallerType}"
+							else -> "${propProjName.replace("_", "-")}_${version}_${tmpCpuArchDistro}.${propInstallerType}"
+						}
+				}
+				else -> {
+					"${propProjName}-${cpuArch}-installer-${version}.${propInstallerType}"
+				}
+			}
+
+		val tmpFileObjOrg = File(
+				layout.buildDirectory.dir(confJpackOutputDir).get().toString(),
+				tmpFilenOrg
+		)
+		if (!tmpFileObjOrg.exists()) {
+			throw Exception("File '${tmpFileObjOrg}' not found")
+		}
+		val tmpFilenTrg = when (osName) {
+				"macos", "linux" -> {
+					"${propProjName}-${osName}-${cpuArch}-${version}.${propInstallerType}"
+				}
+				else -> {
+					"${propProjName}-${osName}-${cpuArch}-${version}-installer.${propInstallerType}"
+				}
+			}
+		val tmpFileObjTrg = File(confDistPreOutputDir, tmpFilenTrg)
+		println("Renaming '${tmpFileObjOrg}' to '${tmpFileObjTrg}'")
+		tmpFileObjOrg.renameTo(tmpFileObjTrg)
+	}
+}
+
+tasks {
+	register<Copy>("runtimeTarPreCopy")
+	named<Copy>("runtimeTarPreCopy") {
+		dependsOn(":runtime")
+
+		doFirst {
+			if (osName == "win") {
+				throw Exception("Do not use 'runtimeTar' under MS Windows. Use 'runtimeZip' instead")
+			}
+		}
+
+		/*
+		 * We need to copy the launcher dir into a new subdir first,
+		 * otherwise the resulting TAR-ball would not contain a parent directory
+		 */
+		val tmpPreCopyDir = layout.buildDirectory.dir("runtimeTarPreCopy").get().toString()
+		val tmpBaseFilenTrg = runtime.get().imageDirAsFile.name
+		from(runtime.get().imageDir)
+		into(File(tmpPreCopyDir, tmpBaseFilenTrg))
+	}
+
+	register<Tar>("runtimeTarMain")
+	named<Tar>("runtimeTarMain") {
+		dependsOn(":runtimeTarPreCopy")
+
+		doFirst {
+			if (osName == "win") {
+				throw Exception("Do not use 'runtimeTar' under MS Windows. Use 'runtimeZip' instead")
+			}
+		}
+
+		val tmpPreCopyDir = layout.buildDirectory.dir("runtimeTarPreCopy").get().toString()
+		val tmpBaseFilenTrg = runtime.get().imageDirAsFile.name
+		println("Creating '${confDistPreOutputDir}/${tmpBaseFilenTrg}.tgz'...")
+		from(File(tmpPreCopyDir))
+		archiveFileName.set("${tmpBaseFilenTrg}.tgz")
+		destinationDirectory.set(File(confDistPreOutputDir))
+		compression = Compression.GZIP
+	}
+
+	register<DefaultTask>("runtimeTarCleanUp")
+	named<DefaultTask>("runtimeTarCleanUp") {
+		dependsOn(":runtimeTarMain")
+
+		doFirst {
+			if (osName == "win") {
+				throw Exception("Do not use 'runtimeTar' under MS Windows. Use 'runtimeZip' instead")
+			}
+		}
+
+		doLast {
+			val tmpPreCopyDir = layout.buildDirectory.dir("runtimeTarPreCopy").get().toString()
+			if (! File(tmpPreCopyDir).exists()) {
+				throw Exception("Directory '${tmpPreCopyDir}' does not exist")
+			}
+			File(tmpPreCopyDir).deleteRecursively()
+		}
+	}
+
+	register<DefaultTask>("runtimeTar")
+	named<DefaultTask>("runtimeTar") {
+		dependsOn(":runtimeTarCleanUp")
+
+		doFirst {
+			if (osName == "win") {
+				throw Exception("Do not use 'runtimeTar' under MS Windows. Use 'runtimeZip' instead")
+			}
+		}
+	}
+}
+
+tasks.distTar {
+	compression = Compression.GZIP
+	archiveExtension = "tgz"
+
+	doFirst {
+		if (osName == "win") {
+			throw Exception("Do not use 'distTar' under MS Windows. Use 'distZip' instead")
+		}
+	}
+
+	doLast {
+		val tmpFilenOrg = "${distributions.main.get().distributionBaseName.get()}-${version}.tgz"
+		val tmpFileObjOrg = File(
+				layout.buildDirectory.dir("distributions").get().toString(),
+				tmpFilenOrg
+			)
+		if (! tmpFileObjOrg.exists()) {
+			throw Exception("File '${tmpFileObjOrg}' not found")
+		}
+		val tmpFilenTrg = "${distributions.main.get().distributionBaseName.get()}-${version}-launcher-no_jre.tgz"
+		val tmpFileObjTrg = File(confDistPreOutputDir, tmpFilenTrg)
+		println("Renaming '${tmpFileObjOrg}' to '${tmpFileObjTrg}'")
+		tmpFileObjOrg.renameTo(tmpFileObjTrg)
+	}
+}
+
+tasks.distZip {
+	doFirst {
+		if (osName != "win") {
+			throw Exception("Do not use 'distZip' under macOS/Linux. Use 'distTar' instead")
+		}
+	}
+
+	doLast {
+		val tmpFilenOrg = "${distributions.main.get().distributionBaseName.get()}-${version}.zip"
+		val tmpFileObjOrg = File(
+				layout.buildDirectory.dir("distributions").get().toString(),
+				tmpFilenOrg
+			)
+		if (! tmpFileObjOrg.exists()) {
+			throw Exception("File '${tmpFileObjOrg}' not found")
+		}
+		val tmpFilenTrg = "${distributions.main.get().distributionBaseName.get()}-${version}-launcher-no_jre.zip"
+		val tmpFileObjTrg = File(confDistPreOutputDir, tmpFilenTrg)
+		println("Renaming '${tmpFileObjOrg}' to '${tmpFileObjTrg}'")
+		tmpFileObjOrg.renameTo(tmpFileObjTrg)
 	}
 }
