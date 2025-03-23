@@ -15,18 +15,18 @@ see [docs/README-run_dist.md](docs/README-run_dist.md)
 
 ## Screenshots
 
-Left camera, tab "Connection":
+Tab "Connection" (left camera active):
 
 ![Screenshot of the GUI](docs/camera_server_client-screenshot-a.png "Screenshot of the GUI")
 
-Left camera, tab "Controls":
+Tab "Controls" (left camera active):
 
 ![Screenshot of the GUI](docs/camera_server_client-screenshot-b.png "Screenshot of the GUI")
 
-Left camera, tab "Brightness & Contrast":
+Tab "Brightness & Contrast" (left camera active):
 
 ![Screenshot of the GUI](docs/camera_server_client-screenshot-c.png "Screenshot of the GUI")
 
-Both cameras, tab "Controls":
+Both cameras active:
 
 ![Screenshot of the GUI](docs/camera_server_client-screenshot-d.png "Screenshot of the GUI")
