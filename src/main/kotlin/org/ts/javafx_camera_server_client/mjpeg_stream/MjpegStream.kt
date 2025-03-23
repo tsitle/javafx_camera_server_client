@@ -1,6 +1,7 @@
 /*
  * Based on
  *   https://raw.githubusercontent.com/andrealaforgia/mjpeg-client/refs/heads/master/src/main/java/com/andrealaforgia/mjpegclient/MjpegRunner.java
+ * Adapted and slightly improved by TS, Mar 2025
  */
 package org.ts.javafx_camera_server_client.mjpeg_stream
 
@@ -133,41 +134,61 @@ class MjpegStream {
 	 */
 	@Throws(IOException::class)
 	private fun retrieveNextImage(): ByteArray {
-		// build headers
+		var hdValContentLength = 0
+
+		// read headers
 		//   (the D-Link DCS-930L camera stops its headers)
 		var captureContentLength = false
-		val contentLengthStringWriter = StringWriter(128)
-		val headerWriter = StringWriter(128)
-
+		val headerValueWriter = StringWriter(128)
+		val headerBufferWriter = StringWriter(128)
 		var currByte = 0
-		var contentLength = 0
+		var headerByteCount = 0
 
 		while (isOpened && (urlStream!!.read().also { currByte = it }) > -1) {
-			if (captureContentLength) {
+			if (! captureContentLength) {
+				// keep reading the headers until HTTP_HD_CONTENT_LENGTH_STR was found
+				headerBufferWriter.write(currByte)
+				if (++headerByteCount > HTTP_HD_CONTENT_LENGTH_SLEN + HTTP_HD_CONTENT_TYPE_SLEN + MIME_TYPE_JPEG_SLEN) {
+					val tmpBufString = headerBufferWriter.toString()
+					val indexOf = tmpBufString.lowercase().indexOf(HTTP_HD_CONTENT_LENGTH_STR_LC)
+					if (indexOf >= 0) {
+						captureContentLength = true
+					}
+				}
+			} else {
 				if (currByte == 10 || currByte == 13) {
-					contentLength = contentLengthStringWriter.toString().toInt()
+					val tmpBufString = headerBufferWriter.toString()
+					val indexOf = tmpBufString.lowercase().indexOf(HTTP_HD_CONTENT_TYPE_STR_LC)
+					if (indexOf < 0) {
+						throw SocketException("Invalid data received from stream")
+					}
+					var tmpHdValContentType = tmpBufString.substring(indexOf)
+					tmpHdValContentType = tmpHdValContentType.substring(0, tmpHdValContentType.indexOf('\n'))
+					tmpHdValContentType = tmpHdValContentType.substring(tmpHdValContentType.indexOf(':') + 1)
+					tmpHdValContentType = tmpHdValContentType.trim()
+					if (tmpHdValContentType != MIME_TYPE_JPEG_STR) {
+						throw SocketException("Invalid MIME-Type received from stream")
+					}
+					//
+					hdValContentLength = headerValueWriter.toString().toInt()
 					break
 				}
-				contentLengthStringWriter.write(currByte)
-			} else {
-				headerWriter.write(currByte)
-				val tempString = headerWriter.toString()
-				val indexOf = tempString.indexOf(CONTENT_LENGTH)
-				if (indexOf > 0) {
-					captureContentLength = true
+				if (currByte != 32) {
+					// we write only the bytes for the Content-Length into [headerValueWriter]
+					headerValueWriter.write(currByte)
 				}
 			}
 		}
-		if (! isOpened) {
+		if (! isOpened || hdValContentLength < 100) {  // 100 bytes is an arbitrary value
 			return ByteArray(0)
 		}
 
-		// 255 indicates the start of the jpeg image
+		// 0xFF indicates the start of the jpeg image
 		var tmpByte: Int
 		while (isOpened) {
 			// just skip extras
 			tmpByte = urlStream!!.read()
-			if (tmpByte == 255) {
+			if (tmpByte == 0xFF) {
 				break
 			}
 			if (tmpByte == -1) {
@@ -179,9 +200,9 @@ class MjpegStream {
 		}
 
 		// rest is the buffer
-		val imageBytes = ByteArray(contentLength + 1)
-		// since we ate the original 255, shove it back in
-		imageBytes[0] = 255.toByte()
+		val imageBytes = ByteArray(hdValContentLength + 1)
+		// since we ate the original 0xFF, shove it back in
+		imageBytes[0] = 0xFF.toByte()
 		var offset = 1
 		var numRead = 0
 		while (isOpened && offset < imageBytes.size &&
@@ -196,23 +217,14 @@ class MjpegStream {
 		return imageBytes
 	}
 
-	// dirty but works: content-length parsing
-	/*
-	private fun contentLength(header: String): Int {
-		val indexOfContentLength: Int = header.indexOf(CONTENT_LENGTH)
-		val valueStartPos: Int = indexOfContentLength + CONTENT_LENGTH.length
-		val indexOfEOL: Int = header.indexOf('\n', indexOfContentLength)
-
-		val lengthValStr: String = header.substring(valueStartPos, indexOfEOL).trim()
-
-		val retValue: Int = Integer.parseInt(lengthValStr)
-
-		return retValue
-	}
-	*/
-
 	companion object {
-		private const val CONTENT_LENGTH = "Content-Length: "
-		//private const val CONTENT_TYPE = "Content-type: image/jpeg"
+		private val HTTP_HD_CONTENT_LENGTH_STR_LC = "Content-Length:".lowercase().trim()
+		private val HTTP_HD_CONTENT_LENGTH_SLEN = HTTP_HD_CONTENT_LENGTH_STR_LC.length
+
+		private val HTTP_HD_CONTENT_TYPE_STR_LC = "Content-Type:".lowercase().trim()
+		private val HTTP_HD_CONTENT_TYPE_SLEN = HTTP_HD_CONTENT_TYPE_STR_LC.length
+
+		private const val MIME_TYPE_JPEG_STR = "image/jpeg"
+		private const val MIME_TYPE_JPEG_SLEN = MIME_TYPE_JPEG_STR.length
 	}
 }
