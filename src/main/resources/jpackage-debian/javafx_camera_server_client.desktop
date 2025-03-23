@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=JavaFX Camera Server Client
+Comment=
+Exec=/opt/javafx-camera-server-client/bin/javafx_camera_server_client
+Icon=/opt/javafx-camera-server-client/lib/javafx_camera_server_client.png
+Terminal=false
+Type=Application
+Categories=Utility;
+MimeType=
+StartupWMClass=org.ts.javafx_camera_server_client
