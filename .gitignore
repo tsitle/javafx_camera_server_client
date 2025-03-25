@@ -11,6 +11,8 @@ docs/notes.md
 build.gradle--*
 build.gradle.kts--*
 
+gradlew-buildPortable-*.*
+
 /dist/
 /distPre/
 
