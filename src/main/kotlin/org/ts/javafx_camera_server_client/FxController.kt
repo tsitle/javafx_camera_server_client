@@ -195,8 +195,7 @@ open class FxController : MjpegViewer {
 			conConnectBtn.text = (if (it) "Disconnect" else "Connect")
 			setTooltipOfButton(conConnectBtn, if (it) "Disconnect from server" else "Connect to server")
 
-			conServerUrlTxtfld.isDisable = it
-			conServerApiKeyTxtfld.isDisable = it
+			setIsDisabledForAllConnectionControls(value = it, doSetConnectBtn = false)
 
 			handleUiPropChangeForCtrlCamButtons()
 			ctrlShowGridCbx.isDisable = ! it
@@ -326,6 +325,17 @@ open class FxController : MjpegViewer {
 	}
 
 	/**
+	 * Enable/disable all controls in the "Connection" tab
+	 */
+	private fun setIsDisabledForAllConnectionControls(value: Boolean, doSetConnectBtn: Boolean) {
+		if (doSetConnectBtn) {
+			conConnectBtn.isDisable = value
+		}
+		conServerUrlTxtfld.isDisable = value
+		conServerApiKeyTxtfld.isDisable = value
+	}
+
+	/**
 	 * Set value of tooltip of button (and its parent label)
 	 */
 	private fun setTooltipOfButton(btn: Button, text: String) {
@@ -437,9 +447,7 @@ open class FxController : MjpegViewer {
 		if (conServerUrlTxtfld.text.isEmpty() || conServerApiKeyTxtfld.text.isEmpty()) {
 			// update UI
 			uiProps.statusMsg.set("Cannot connect because of missing URL or API Key")
-			conConnectBtn.isDisable = false
-			conServerUrlTxtfld.isDisable = false
-			conServerApiKeyTxtfld.isDisable = false
+			setIsDisabledForAllConnectionControls(value = false, doSetConnectBtn = true)
 			return
 		}
 
@@ -468,8 +476,7 @@ open class FxController : MjpegViewer {
 			} else {
 				// update UI
 				uiProps.statusMsg.set("Could not open server connection")
-				conServerUrlTxtfld.isDisable = false
-				conServerApiKeyTxtfld.isDisable = false
+				setIsDisabledForAllConnectionControls(value = false, doSetConnectBtn = false)
 			}
 			// update UI
 			conConnectBtn.isDisable = false
@@ -485,9 +492,7 @@ open class FxController : MjpegViewer {
 				else -> tmpEx.toString()
 			}
 			uiProps.statusMsg.value = "Error: $errMsg"
-			conServerUrlTxtfld.isDisable = false
-			conServerApiKeyTxtfld.isDisable = false
-			conConnectBtn.isDisable = false
+			setIsDisabledForAllConnectionControls(value = false, doSetConnectBtn = true)
 		}
 
 		//
@@ -608,9 +613,11 @@ open class FxController : MjpegViewer {
 	override fun mjpegSetRawImageData(rawByteArrayInputStream: ByteArrayInputStream) {
 		val timeNow: Long = System.currentTimeMillis()
 		val timeDelta: Long = (if (timeNow >= lastFrameOutputTime) {timeNow - lastFrameOutputTime} else {lastFrameOutputTime - timeNow})
+
 		if (lastFrameOutputTime > 0 && timeDelta + 15 < cameraOutputTimeoutMs) {
-			return
+			return  // skip frame
 		}
+
 		if (lastFrameOutputTime > 0) {
 			avgOutputTime += timeDelta
 			if (++avgOutputCounter == cameraOutputFps * 10) {  // output every 10s
@@ -696,9 +703,7 @@ open class FxController : MjpegViewer {
 	@FXML
 	protected fun evtConConnect(event: ActionEvent?) {
 		// update UI
-		conConnectBtn.isDisable = true
-		conServerUrlTxtfld.isDisable = true
-		conServerApiKeyTxtfld.isDisable = true
+		setIsDisabledForAllConnectionControls(value = true, doSetConnectBtn = true)
 		//
 		if (! uiProps.connectionOpen.value) {
 			connectionOpen()
