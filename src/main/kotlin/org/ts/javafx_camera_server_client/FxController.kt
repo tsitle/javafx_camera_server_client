@@ -58,8 +58,6 @@ open class FxController : MjpegViewer {
 	// ------------------------------------------------------------------------
 
 	@FXML
-	private lateinit var conConnectBtn: Button
-	@FXML
 	private lateinit var imageAnchorPane: AnchorPane
 	@FXML
 	private lateinit var bottomAnchorPane: AnchorPane
@@ -68,9 +66,11 @@ open class FxController : MjpegViewer {
 	@FXML
 	private lateinit var statusLbl: Label
 	@FXML
-	private lateinit var serverUrlTxtfld: TextField
+	private lateinit var conConnectBtn: Button
 	@FXML
-	private lateinit var serverApiKeyTxtfld: TextField
+	private lateinit var conServerUrlTxtfld: TextField
+	@FXML
+	private lateinit var conServerApiKeyTxtfld: TextField
 	@FXML
 	private lateinit var ctrlCamLeftBtn: Button
 	@FXML
@@ -131,14 +131,14 @@ open class FxController : MjpegViewer {
 	@FXML
 	protected fun initialize() {
 		// get Server URL from env
-		val tmpServerUrl = System.getenv("JFXCSC_SERVERURL") ?: ""
+		val tmpServerUrl = System.getenv("JFXCSC_URL") ?: ""
 		if (tmpServerUrl.isNotEmpty()) {
-			serverUrlTxtfld.text = tmpServerUrl
+			conServerUrlTxtfld.text = tmpServerUrl
 		}
 		// get Server API Key Hash from env
-		val tmpServerApiKeyHash = System.getenv("JFXCSC_SERVERAPIKEYHASH") ?: ""
+		val tmpServerApiKeyHash = System.getenv("JFXCSC_APIKEYHASH") ?: ""
 		if (tmpServerApiKeyHash.isNotEmpty()) {
-			serverApiKeyTxtfld.text = tmpServerApiKeyHash
+			conServerApiKeyTxtfld.text = tmpServerApiKeyHash
 		}
 
 		//
@@ -150,7 +150,7 @@ open class FxController : MjpegViewer {
 		threadStatus.start()
 
 		// load camera stream
-		if (tmpServerUrl.isNotEmpty() && serverApiKeyTxtfld.text.isNotEmpty()) {
+		if (tmpServerUrl.isNotEmpty() && conServerApiKeyTxtfld.text.isNotEmpty()) {
 			conConnectBtn.fire()
 		}
 	}
@@ -195,8 +195,8 @@ open class FxController : MjpegViewer {
 			conConnectBtn.text = (if (it) "Disconnect" else "Connect")
 			setTooltipOfButton(conConnectBtn, if (it) "Disconnect from server" else "Connect to server")
 
-			serverUrlTxtfld.isDisable = it
-			serverApiKeyTxtfld.isDisable = it
+			conServerUrlTxtfld.isDisable = it
+			conServerApiKeyTxtfld.isDisable = it
 
 			handleUiPropChangeForCtrlCamButtons()
 			ctrlShowGridCbx.isDisable = ! it
@@ -434,12 +434,12 @@ open class FxController : MjpegViewer {
 	 * Open server connection
 	 */
 	private fun connectionOpen() {
-		if (serverUrlTxtfld.text.isEmpty() || serverApiKeyTxtfld.text.isEmpty()) {
+		if (conServerUrlTxtfld.text.isEmpty() || conServerApiKeyTxtfld.text.isEmpty()) {
 			// update UI
 			uiProps.statusMsg.set("Cannot connect because of missing URL or API Key")
 			conConnectBtn.isDisable = false
-			serverUrlTxtfld.isDisable = false
-			serverApiKeyTxtfld.isDisable = false
+			conServerUrlTxtfld.isDisable = false
+			conServerApiKeyTxtfld.isDisable = false
 			return
 		}
 
@@ -451,7 +451,7 @@ open class FxController : MjpegViewer {
 				// start the video capture
 				capture.openStream(
 						that,
-						"${serverUrlTxtfld.text}/stream.mjpeg?cid=${uiProps.clientId.value}"
+						"${conServerUrlTxtfld.text}/stream.mjpeg?cid=${uiProps.clientId.value}"
 					)
 
 				return (capture.isOpened)  // is the video stream available?
@@ -468,8 +468,8 @@ open class FxController : MjpegViewer {
 			} else {
 				// update UI
 				uiProps.statusMsg.set("Could not open server connection")
-				serverUrlTxtfld.isDisable = false
-				serverApiKeyTxtfld.isDisable = false
+				conServerUrlTxtfld.isDisable = false
+				conServerApiKeyTxtfld.isDisable = false
 			}
 			// update UI
 			conConnectBtn.isDisable = false
@@ -485,19 +485,19 @@ open class FxController : MjpegViewer {
 				else -> tmpEx.toString()
 			}
 			uiProps.statusMsg.value = "Error: $errMsg"
-			serverUrlTxtfld.isDisable = false
-			serverApiKeyTxtfld.isDisable = false
+			conServerUrlTxtfld.isDisable = false
+			conServerApiKeyTxtfld.isDisable = false
 			conConnectBtn.isDisable = false
 		}
 
 		//
 		apiClientFncs = ApiClientFncs(
-				serverUrlTxtfld.text,
-				serverApiKeyTxtfld.text,
+				conServerUrlTxtfld.text,
+				conServerApiKeyTxtfld.text,
 				uiProps
 			)
 		// update UI
-		uiProps.statusMsg.set("Connecting to '${serverUrlTxtfld.text}'...")
+		uiProps.statusMsg.set("Connecting to '${conServerUrlTxtfld.text}'...")
 		//
 		uiProps.apiClientLostConnection.value = false
 		// reset output FPS data
@@ -697,8 +697,8 @@ open class FxController : MjpegViewer {
 	protected fun evtConConnect(event: ActionEvent?) {
 		// update UI
 		conConnectBtn.isDisable = true
-		serverUrlTxtfld.isDisable = true
-		serverApiKeyTxtfld.isDisable = true
+		conServerUrlTxtfld.isDisable = true
+		conServerApiKeyTxtfld.isDisable = true
 		//
 		if (! uiProps.connectionOpen.value) {
 			connectionOpen()

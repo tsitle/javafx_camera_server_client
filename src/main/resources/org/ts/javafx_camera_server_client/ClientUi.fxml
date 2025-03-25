@@ -79,7 +79,7 @@
                                                       <Insets right="5.0" />
                                                    </padding>
                                                 </Label>
-                                                <TextField fx:id="serverUrlTxtfld" text="http://your_hostname_or_ip:8090" GridPane.columnIndex="1">
+                                                <TextField fx:id="conServerUrlTxtfld" text="http://your_hostname_or_ip:8090" GridPane.columnIndex="1">
                                                    <tooltip>
                                                       <Tooltip text="e.g. &quot;http://your_hostname_or_ip:8090&quot;" />
                                                    </tooltip></TextField>
@@ -88,7 +88,7 @@
                                                       <Insets right="5.0" />
                                                    </padding>
                                                 </Label>
-                                                <TextField fx:id="serverApiKeyTxtfld" text="fcab525e507275f17fbaf7932048beba" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                                <TextField fx:id="conServerApiKeyTxtfld" text="fcab525e507275f17fbaf7932048beba" GridPane.columnIndex="1" GridPane.rowIndex="1">
                                                    <tooltip>
                                                       <Tooltip text="e.g. API Key &quot;xylophon&quot; -&gt; Hash &quot;fcab525e507275f17fbaf7932048beba&quot;" />
                                                    </tooltip></TextField>
