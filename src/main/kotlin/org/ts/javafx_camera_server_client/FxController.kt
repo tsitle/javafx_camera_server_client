@@ -609,7 +609,7 @@ open class FxController : MjpegViewer {
 		val timeNow: Long = System.currentTimeMillis()
 		val timeDelta: Long = (if (timeNow >= lastFrameOutputTime) {timeNow - lastFrameOutputTime} else {lastFrameOutputTime - timeNow})
 		if (lastFrameOutputTime > 0 && timeDelta + 15 < cameraOutputTimeoutMs) {
-			return
+			return  // skip frame
 		}
 		if (lastFrameOutputTime > 0) {
 			avgOutputTime += timeDelta
