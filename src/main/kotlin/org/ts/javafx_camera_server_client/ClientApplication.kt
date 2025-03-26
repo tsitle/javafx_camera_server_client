@@ -20,7 +20,15 @@ class ClientApplication : Application() {
 			val loader = FXMLLoader(ClientApplication::class.java.getResource("ClientUi.fxml"))
 
 			// store the root element so that the controllers can use it
-			val rootElement = loader.load<Any>() as BorderPane
+			val rootElement: javafx.scene.Parent
+			try {
+				rootElement = loader.load<Any>() as BorderPane
+			} catch (ex: javafx.fxml.LoadException) {
+				ex.printStackTrace()
+				System.err.println("Could not load FX root element. Exiting...")
+				Platform.exit()
+				return
+			}
 
 			// create and style a scene
 			val scene = Scene(rootElement, 800.0, 600.0)
