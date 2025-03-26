@@ -263,7 +263,7 @@
                                                       <Insets right="5.0" />
                                                    </padding>
                                                 </Label>
-                                                <Slider fx:id="bncBrightnSlid" disable="true" onKeyReleased="#evtBncBrightnSlidKeyRel" onMouseClicked="#evtBncBrightnSlidMouseClicked" onMouseDragged="#evtBncBrightnSlidMouseDragged" prefWidth="245.0" showTickMarks="true" snapToTicks="true" GridPane.columnIndex="1">
+                                                <Slider fx:id="bncBrightnSlid" disable="true" onKeyReleased="#evtSliderKeyRel" onMouseClicked="#evtSliderMouseClicked" onMouseDragged="#evtSliderMouseDragged" prefWidth="245.0" showTickMarks="true" snapToTicks="true" GridPane.columnIndex="1">
                                                    <padding>
                                                       <Insets top="10.0" />
                                                    </padding></Slider>
@@ -272,7 +272,7 @@
                                                       <Insets right="5.0" />
                                                    </padding>
                                                 </Label>
-                                                <Slider fx:id="bncContrSlid" disable="true" onKeyReleased="#evtBncContrSlidKeyRel" onMouseClicked="#evtBncContrSlidMouseClicked" onMouseDragged="#evtBncContrSlidMouseDragged" prefWidth="245.0" showTickMarks="true" snapToTicks="true" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                                <Slider fx:id="bncContrSlid" disable="true" onKeyReleased="#evtSliderKeyRel" onMouseClicked="#evtSliderMouseClicked" onMouseDragged="#evtSliderMouseDragged" prefWidth="245.0" showTickMarks="true" snapToTicks="true" GridPane.columnIndex="1" GridPane.rowIndex="1">
                                                    <padding>
                                                       <Insets top="10.0" />
                                                    </padding>

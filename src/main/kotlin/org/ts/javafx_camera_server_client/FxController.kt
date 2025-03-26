@@ -770,7 +770,7 @@ open class FxController : MjpegViewer {
 	@FXML
 	protected fun evtCtrlZoom(event: ActionEvent?) {
 		var nextZoomLevel = uiProps.ctrlZoomLevel.value
-		when (event!!.target) {
+		when (event!!.source as Button) {
 			ctrlZoomPlusBtn -> nextZoomLevel -= 10
 			ctrlZoomMinusBtn -> nextZoomLevel += 10
 			else -> nextZoomLevel = 100
@@ -781,88 +781,58 @@ open class FxController : MjpegViewer {
 	}
 
 	/**
-	 * Event: Slider "B&C: Brightness" mouse dragged
+	 * Event: Slider mouse dragged
 	 *
 	 * @param event
 	 */
 	@FXML
-	protected fun evtBncBrightnSlidMouseDragged(event: MouseEvent?) {
-		bncBrightnSlidValueChanged()
+	protected fun evtSliderMouseDragged(event: MouseEvent?) {
+		sliderValueChanged(event!!.source as Slider)
 	}
 
 	/**
-	 * Event: Slider "B&C: Brightness" mouse clicked
+	 * Event: Slider mouse clicked
 	 *
 	 * @param event
 	 */
 	@FXML
-	protected fun evtBncBrightnSlidMouseClicked(event: MouseEvent?) {
-		bncBrightnSlidValueChanged()
+	protected fun evtSliderMouseClicked(event: MouseEvent?) {
+		sliderValueChanged(event!!.source as Slider)
 	}
 
 	/**
-	 * Event: Slider "B&C: Brightness" key released
+	 * Event: Slider key released
 	 *
 	 * @param event
 	 */
 	@FXML
-	protected fun evtBncBrightnSlidKeyRel(event: KeyEvent?) {
-		bncBrightnSlidValueChanged()
+	protected fun evtSliderKeyRel(event: KeyEvent?) {
+		sliderValueChanged(event!!.source as Slider)
 	}
 
 	/**
-	 * Handle value change of Slider "B&C: Brightness"
+	 * Handle value change of Slider
 	 */
-	private fun bncBrightnSlidValueChanged() {
-		val newVal = round(bncBrightnSlid.value).toInt()
-		if (newVal == lastBncBrightnVal) {
-			return
+	private fun sliderValueChanged(elem: Slider) {
+		val newVal = round(elem.value).toInt()
+		when (elem) {
+			bncBrightnSlid -> {
+				if (newVal == lastBncBrightnVal) {
+					return
+				}
+				lastBncBrightnVal = newVal
+				//
+				apiClientFncs?.setBrightness(newVal)
+			}
+			bncContrSlid -> {
+				if (newVal == lastBncContrVal) {
+					return
+				}
+				lastBncContrVal = newVal
+				//
+				apiClientFncs?.setContrast(newVal)
+			}
+			else -> {}
 		}
-		lastBncBrightnVal = newVal
-		//
-		apiClientFncs?.setBrightness(newVal)
-	}
-
-	/**
-	 * Event: Slider "B&C: Contrast" mouse dragged
-	 *
-	 * @param event
-	 */
-	@FXML
-	protected fun evtBncContrSlidMouseDragged(event: MouseEvent?) {
-		bncContrSlidValueChanged()
-	}
-
-	/**
-	 * Event: Slider "B&C: Contrast" mouse clicked
-	 *
-	 * @param event
-	 */
-	@FXML
-	protected fun evtBncContrSlidMouseClicked(event: MouseEvent?) {
-		bncContrSlidValueChanged()
-	}
-
-	/**
-	 * Event: Slider "B&C: Contrast" key released
-	 *
-	 * @param event
-	 */
-	@FXML
-	protected fun evtBncContrSlidKeyRel(event: KeyEvent?) {
-		bncContrSlidValueChanged()
-	}
-
-	/**
-	 * Handle value change of Slider "B&C: Contrast"
-	 */
-	private fun bncContrSlidValueChanged() {
-		val newVal = round(bncContrSlid.value).toInt()
-		if (newVal == lastBncContrVal) {
-			return
-		}
-		lastBncContrVal = newVal
-		//
-		apiClientFncs?.setContrast(newVal)
 	}
 }
