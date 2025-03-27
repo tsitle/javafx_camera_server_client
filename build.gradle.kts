@@ -146,7 +146,7 @@ distributions {
 			if (osName == "win") {
 				from("src/launch_wrappers/launcher-${osName}.cmd")
 			} else {
-				from("src/launch_wrappers/launcher-${osName}.sh")
+				from("src/launch_wrappers/launcher-${osName}.sh").rename("launcher-${osName}.sh", "launcher-${osName}")
 			}
 		}
 	}
