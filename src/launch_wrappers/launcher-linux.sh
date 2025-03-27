@@ -95,4 +95,4 @@ if [ ! -f "$(dirname "$0")/bin/java" ]; then
 	export JAVA_OPTS="--module-path lib --add-modules=javafx.controls,javafx.fxml"
 fi
 
-./bin/javafx_camera_server_client
+"$(dirname "$0")"/bin/javafx_camera_server_client
